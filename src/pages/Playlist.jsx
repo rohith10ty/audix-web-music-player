@@ -170,39 +170,43 @@ export default function Playlist() {
             className="h-[125px] w-[125px] rounded-xl object-cover shadow-[0_12px_32px_rgba(0,0,0,0.35)] md:h-[150px] md:w-[150px]"
           />
 
-          <div className="min-w-0">
-            <p className="mb-0.5 text-[11px] font-bold uppercase tracking-wider text-red-500">
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider text-red-500">
               Playlist {playlist.language ? `• ${playlist.language}` : ""}
             </p>
 
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl xl:text-4xl leading-tight">
+            <h1
+              className={`
+                text-2xl font-black tracking-tight sm:text-3xl xl:text-4xl leading-tight
+                ${theme === "dark" ? "text-white" : "text-stone-900"}
+              `}
+            >
               {playlist.title}
             </h1>
 
             <p
               className={`
-              mt-1 max-w-2xl text-[12.5px] line-clamp-2
-              ${theme === "dark" ? "text-[#b3b3b3]" : "text-stone-600"}
-            `}
+                mt-1.5 max-w-2xl text-[12.5px] sm:text-[13.5px] font-medium line-clamp-2 leading-relaxed
+                ${theme === "dark" ? "text-[#cccccc]" : "text-stone-700"}
+              `}
             >
               {playlist.description}
             </p>
 
-            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px] font-semibold">
-              <span>{playlist.owner}</span>
+            <div
+              className={`
+                mt-2 flex flex-wrap items-center gap-2 text-[12px] font-semibold
+                ${theme === "dark" ? "text-[#b0b0b0]" : "text-stone-700"}
+              `}
+            >
+              <span className="font-bold">{playlist.owner}</span>
               <span className="opacity-40">•</span>
               <span className="text-red-500 font-bold">
                 {playlist.tracks?.length || 0}{" "}
                 {(playlist.tracks?.length || 0) === 1 ? "song" : "songs"}
               </span>
               <span className="opacity-40">•</span>
-              <span
-                className={
-                  theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"
-                }
-              >
-                {playlist.followers || "Curated for you"}
-              </span>
+              <span>{playlist.followers || "Curated for you"}</span>
             </div>
           </div>
         </div>

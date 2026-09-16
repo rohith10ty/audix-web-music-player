@@ -75,27 +75,26 @@ export default function TrackRow({
             : "rgba(120, 113, 108, 0.08)",
       }}
       className={`
-        group relative grid grid-cols-[32px_minmax(0,1fr)_75px] items-center gap-3 rounded-lg px-3 py-1.5 transition-colors
-        md:grid-cols-[32px_minmax(0,1.8fr)_minmax(0,1.2fr)_85px]
+        group relative grid grid-cols-[24px_minmax(0,1fr)_auto] sm:grid-cols-[32px_minmax(0,1fr)_auto] md:grid-cols-[32px_minmax(0,1.8fr)_minmax(0,1.2fr)_105px] items-center gap-2.5 sm:gap-3.5 rounded-xl px-2.5 sm:px-3.5 py-2 transition-colors
         ${
           active
             ? theme === "dark"
-              ? "bg-white/[0.06]"
-              : "bg-red-500/10"
+              ? "bg-white/[0.08] ring-1 ring-white/10"
+              : "bg-red-500/10 ring-1 ring-red-400/30"
             : ""
         }
       `}
     >
       {/* Index number or Play/Pause Button */}
-      <div className="flex items-center justify-center">
+      <div className="flex items-center justify-center shrink-0">
         <span
           className={`
-            text-[13px] font-medium transition
+            text-[12px] sm:text-[13px] font-semibold transition tabular-nums
             ${
               active
                 ? "text-red-500 font-bold"
                 : theme === "dark"
-                ? "text-[#a7a7a7]"
+                ? "text-[#888888]"
                 : "text-stone-400"
             }
             group-hover:hidden
@@ -137,43 +136,49 @@ export default function TrackRow({
       {/* Song Cover Art + Title + Artist + Language */}
       <button
         onClick={handlePlay}
-        className="flex min-w-0 items-center gap-3 text-left focus:outline-none cursor-pointer"
+        className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 text-left focus:outline-none cursor-pointer overflow-hidden"
       >
         <img
           src={track.image}
           alt={track.title}
-          className="h-10 w-10 shrink-0 rounded-md object-cover shadow-sm"
+          className="h-10 w-10 sm:h-11 sm:w-11 shrink-0 rounded-lg object-cover shadow-sm"
         />
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <p
             className={`
-              truncate text-[14px] font-semibold
+              truncate text-[13.5px] sm:text-[14.5px] font-bold leading-tight tracking-tight
               ${
                 active
-                  ? "text-red-500 font-bold"
+                  ? "text-red-500"
                   : theme === "dark"
-                  ? "text-white"
-                  : "text-stone-900"
+                  ? "text-white group-hover:text-red-400"
+                  : "text-stone-900 group-hover:text-red-600"
               }
             `}
           >
             {track.title}
           </p>
 
-          <p
-            className={`
-              mt-[2px] truncate text-[12px]
-              ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
-            `}
-          >
-            {track.artist}{" "}
+          <div className="mt-0.5 flex items-center gap-1.5 overflow-hidden">
+            <span
+              className={`
+                truncate text-[11.5px] sm:text-[12.5px] font-medium
+                ${
+                  theme === "dark"
+                    ? "text-[#a0a0a0] group-hover:text-[#c0c0c0]"
+                    : "text-stone-600 group-hover:text-stone-800"
+                }
+              `}
+            >
+              {track.artist}
+            </span>
             {track.language && (
-              <span className="ml-1 text-[10px] font-semibold text-red-500 bg-red-500/10 px-1.5 py-0.5 rounded">
+              <span className="shrink-0 text-[9.5px] sm:text-[10px] font-bold text-red-500 bg-red-500/15 px-1.5 py-0.2 rounded border border-red-500/20">
                 {track.language}
               </span>
             )}
-          </p>
+          </div>
         </div>
       </button>
 
@@ -181,8 +186,8 @@ export default function TrackRow({
       {showAlbum && (
         <p
           className={`
-            hidden truncate text-[13px] md:block
-            ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
+            hidden truncate text-[13px] md:block font-medium
+            ${theme === "dark" ? "text-[#a0a0a0]" : "text-stone-600"}
           `}
         >
           {track.album}
@@ -190,25 +195,26 @@ export default function TrackRow({
       )}
 
       {/* Heart button + Duration + Options */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-1.5 sm:gap-2.5 shrink-0">
+        {/* Heart button */}
         <motion.button
-          whileHover={{ scale: 1.2 }}
+          whileHover={{ scale: 1.18 }}
           whileTap={{ scale: 0.85 }}
           onClick={(e) => {
             e.stopPropagation();
             toggleLike(track);
           }}
           className={`
-            p-1 transition cursor-pointer
+            p-1.5 rounded-full transition cursor-pointer
             ${
               liked
                 ? "text-red-500 opacity-100"
-                : "opacity-0 group-hover:opacity-100"
+                : "hidden sm:block opacity-0 md:group-hover:opacity-100"
             }
             ${
               theme === "dark"
-                ? "text-[#a7a7a7] hover:text-white"
-                : "text-stone-400 hover:text-stone-900"
+                ? "text-[#a0a0a0] hover:text-white hover:bg-white/10"
+                : "text-stone-400 hover:text-stone-900 hover:bg-stone-200"
             }
           `}
           title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
@@ -229,7 +235,7 @@ export default function TrackRow({
               e.stopPropagation();
               removeSongFromPlaylist(playlistId, track.id);
             }}
-            className="p-1 text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+            className="p-1.5 text-stone-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition cursor-pointer"
             title="Remove from this playlist"
           >
             <Trash2 size={15} />
@@ -238,8 +244,8 @@ export default function TrackRow({
 
         <span
           className={`
-            text-[12px]
-            ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
+            text-[12px] sm:text-[12.5px] font-medium tabular-nums
+            ${theme === "dark" ? "text-[#a0a0a0]" : "text-stone-500"}
           `}
         >
           {track.duration}
@@ -253,11 +259,11 @@ export default function TrackRow({
               setShowPlaylistSubmenu(false);
             }}
             className={`
-              p-1 opacity-0 transition group-hover:opacity-100 cursor-pointer
+              p-1.5 rounded-full opacity-70 md:opacity-0 md:group-hover:opacity-100 transition cursor-pointer
               ${
                 theme === "dark"
-                  ? "text-[#a7a7a7] hover:text-white"
-                  : "text-stone-400 hover:text-stone-900"
+                  ? "text-[#a0a0a0] hover:text-white hover:bg-white/10"
+                  : "text-stone-500 hover:text-stone-900 hover:bg-stone-200"
               }
             `}
             title="More options"
@@ -383,19 +389,18 @@ export function TrackHeader() {
   return (
     <div
       className={`
-        mb-2 grid grid-cols-[32px_minmax(0,1fr)_65px] gap-3 border-b px-3 pb-2 text-[12px] font-bold uppercase tracking-wider
-        md:grid-cols-[32px_minmax(0,1.8fr)_minmax(0,1.2fr)_75px]
+        mb-2 grid grid-cols-[24px_minmax(0,1fr)_auto] sm:grid-cols-[32px_minmax(0,1fr)_auto] md:grid-cols-[32px_minmax(0,1.8fr)_minmax(0,1.2fr)_105px] items-center gap-2.5 sm:gap-3.5 border-b px-2.5 sm:px-3.5 pb-2.5 text-[11px] sm:text-[12px] font-bold uppercase tracking-wider
         ${
           theme === "dark"
-            ? "border-white/[0.08] text-[#a7a7a7]"
-            : "border-stone-300/70 text-stone-400"
+            ? "border-white/[0.08] text-[#888888]"
+            : "border-stone-300 text-stone-500"
         }
       `}
     >
       <span className="text-center">#</span>
       <span>Title</span>
       <span className="hidden md:block">Album</span>
-      <span className="flex justify-end pr-4">
+      <span className="flex justify-end pr-2">
         <Clock3 size={15} />
       </span>
     </div>
