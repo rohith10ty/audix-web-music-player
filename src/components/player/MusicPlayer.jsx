@@ -105,7 +105,28 @@ export default function MusicPlayer() {
           />
         </div>
 
-        {/* LEFT: Current Track Artwork & Meta + Favorite Heart + Progress Percentage */}
+        {/* Mobile Live Scrolling Waveform Inside Bottom Music Player */}
+        <div className="absolute inset-x-2 inset-y-0 z-0 pointer-events-none overflow-hidden rounded-2xl opacity-25 dark:opacity-30 flex items-center justify-center lg:hidden">
+          <ScrollingWaveform
+            height={28}
+            barWidth={2.5}
+            barGap={2}
+            speed={30}
+            fadeEdges={true}
+            isPlaying={isPlaying}
+            progress={progress}
+            interactive={false}
+            activeColor="#ef4444"
+            barColor={
+              theme === "dark"
+                ? "rgba(255, 255, 255, 0.45)"
+                : "rgba(0, 0, 0, 0.35)"
+            }
+            className="w-full"
+          />
+        </div>
+
+        {/* LEFT: Current Track Artwork & Meta + (Desktop Favorite Heart) */}
         <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 lg:w-[30%] lg:flex-none">
           <motion.img
             key={currentTrack.image}
@@ -136,7 +157,7 @@ export default function MusicPlayer() {
             </p>
           </div>
 
-          {/* Favorite Heart Button (Red) */}
+          {/* Desktop Favorite Heart Button */}
           <motion.button
             whileHover={{ scale: 1.2 }}
             whileTap={{ scale: 0.85 }}
@@ -145,7 +166,7 @@ export default function MusicPlayer() {
               toggleLike(currentTrack);
             }}
             className={`
-              shrink-0 p-1 transition cursor-pointer
+              hidden lg:flex shrink-0 p-1 transition cursor-pointer
               ${
                 liked
                   ? "text-red-500"
@@ -162,23 +183,6 @@ export default function MusicPlayer() {
               className={liked ? "text-red-500" : ""}
             />
           </motion.button>
-
-          {/* Mobile Progress Percentage beside Favorite Heart */}
-          <div className="lg:hidden shrink-0 flex items-center">
-            <span
-              className={`
-                text-[10px] sm:text-[10.5px] font-black tabular-nums px-1.5 py-0.5 rounded-full
-                ${
-                  theme === "dark"
-                    ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                    : "bg-red-50 text-red-600 border border-red-200"
-                }
-              `}
-              title="Song progress"
-            >
-              {Math.round(progress || 0)}%
-            </span>
-          </div>
         </div>
 
         {/* CENTER: Desktop Audio Controls & Scrubbing Progress Bar */}
@@ -372,29 +376,73 @@ export default function MusicPlayer() {
           </div>
         </div>
 
-        {/* Mobile Mini-Player Play/Pause Button */}
-        <div className="relative z-10 flex items-center gap-2 lg:hidden ml-auto">
+        {/* Mobile Mini-Player Controls Group: Percentage + Favorite + Play/Pause */}
+        <div className="relative z-10 flex items-center gap-2.5 sm:gap-3 lg:hidden ml-auto shrink-0">
+          {/* Progress Percentage Badge */}
+          <span
+            className={`
+              text-[10.5px] font-black tabular-nums px-2 py-0.5 rounded-full select-none
+              ${
+                theme === "dark"
+                  ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                  : "bg-red-100/90 text-red-600 border border-red-200"
+              }
+            `}
+            title="Song progress"
+          >
+            {Math.round(progress || 0)}%
+          </span>
+
+          {/* Mobile Favorite Heart Button */}
           <motion.button
-            whileTap={{ scale: 0.8 }}
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike(currentTrack);
+            }}
+            className={`
+              flex h-9 w-9 items-center justify-center rounded-full transition cursor-pointer shrink-0
+              ${
+                liked
+                  ? "text-red-500 bg-red-500/15"
+                  : theme === "dark"
+                  ? "text-[#a7a7a7] hover:text-white hover:bg-white/10"
+                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-200/60"
+              }
+            `}
+            title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
+          >
+            <Heart
+              size={18}
+              fill={liked ? "currentColor" : "none"}
+              className={liked ? "text-red-500" : ""}
+            />
+          </motion.button>
+
+          {/* Mobile Play / Pause Button */}
+          <motion.button
+            whileTap={{ scale: 0.85 }}
             onClick={(e) => {
               e.stopPropagation();
               togglePlay();
             }}
             className={`
-              flex h-10 w-10 items-center justify-center rounded-full shadow-md cursor-pointer
+              flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full shadow-md cursor-pointer shrink-0
               ${
                 theme === "dark"
-                  ? "bg-white text-black"
-                  : "bg-stone-900 text-[#faf8f5]"
+                  ? "bg-white text-black hover:scale-105"
+                  : "bg-stone-900 text-[#faf8f5] hover:scale-105"
               }
             `}
+            title={isLoading ? "Buffering..." : isPlaying ? "Pause" : "Play"}
           >
             {isLoading ? (
-              <Loader2 size={18} className="animate-spin text-current" />
+              <Loader2 size={16} className="animate-spin text-current" />
             ) : isPlaying ? (
-              <Pause size={18} fill="currentColor" />
+              <Pause size={16} fill="currentColor" />
             ) : (
-              <Play size={18} fill="currentColor" className="ml-[2px]" />
+              <Play size={16} fill="currentColor" className="ml-[1.5px]" />
             )}
           </motion.button>
         </div>
