@@ -53,7 +53,7 @@ export default function Sidebar() {
         subtitle: `Playlist • ${p.tracks?.length || 0} songs`,
         image:
           p.image ||
-          "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85",
+          "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
         route: `/playlist/${p.id}`,
         type: "Playlists",
         artist: false,

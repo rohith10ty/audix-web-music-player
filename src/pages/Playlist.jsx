@@ -42,7 +42,7 @@ export default function Playlist() {
         owner: "You",
         followers: "0 saves",
         image:
-          "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85",
+          "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
         tracks: [],
         isCustom: true,
       };
@@ -62,7 +62,7 @@ export default function Playlist() {
       owner: "Audix Live",
       followers: "Curated for you",
       image:
-        "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85",
+        songs[0]?.image || "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
       tracks: songs.slice(0, 8),
       isCustom: false,
     };

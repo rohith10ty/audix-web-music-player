@@ -353,7 +353,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "Telugu Trending 2024",
     owner: "Audix Live",
     image:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
     description: "Top Telugu chartbusters and superhit soundtracks.",
   },
   {
@@ -362,7 +362,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "Latest Tamil Hits",
     owner: "Audix Originals",
     image:
-      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/510/Beast-Tamil-2022-20220504184736-500x500.jpg",
     description: "Electrifying Tamil dance beats and mass melodies.",
   },
   {
@@ -371,7 +371,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "Romantic Hindi Arijit",
     owner: "Audix India",
     image:
-      "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/871/Brahmastra-Original-Motion-Picture-Soundtrack-Hindi-2022-20221006155213-500x500.jpg",
     description: "Soulful Hindi love songs and Bollywood melodies.",
   },
   {
@@ -380,7 +380,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "Global English Pop Hits",
     owner: "Audix Global",
     image:
-      "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-500x500.jpg",
     description: "International pop anthems and billboard favorites.",
   },
   {
@@ -389,7 +389,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "South Indian Party Beats",
     owner: "DJ Mix",
     image:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/276/Maari-2-Tamil-2018-20260203193952-500x500.jpg",
     description: "High-voltage dance and festival bangers.",
   },
   {
@@ -398,7 +398,7 @@ export const LIVE_PLAYLIST_THEMES = [
     query: "Acoustic Melody Songs",
     owner: "Lo-Fi Beats",
     image:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=700&q=85",
+      "https://c.saavncdn.com/555/Hridayam-Side-A-Malayalam-2022-20230803211029-500x500.jpg",
     description: "Calm melodies, soft acoustics, and relaxed rhythms.",
   },
 ];
@@ -417,7 +417,7 @@ export async function fetchFeaturedPlaylists(language = "All") {
             title: pt.title,
             description: pt.description,
             owner: pt.owner,
-            image: pt.image,
+            image: tracks[0]?.image || pt.image,
             tracks:
               tracks.length > 0
                 ? tracks
