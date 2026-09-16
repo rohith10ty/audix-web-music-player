@@ -286,30 +286,6 @@ img {
   }
 }
 
-/* Easing curves for View Transitions */
-:root {
-  --expo-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --expo-in: cubic-bezier(0.7, 0, 0.84, 0);
-}
-
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
-}
-
-::view-transition-image-pair(root) {
-  isolation: isolate;
-}
-
-::view-transition-new(root) {
-  z-index: 999999;
-  will-change: clip-path;
-}
-
-::view-transition-old(root) {
-  z-index: 1;
-}
 
 /* Cute Song Playing Wave Animations */
 @keyframes cute-wave-1 {

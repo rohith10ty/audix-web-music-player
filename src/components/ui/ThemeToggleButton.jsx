@@ -55,22 +55,13 @@ export function CuteSongWave({ isPlaying = false, isDark = false, className = ""
 
 export default function ThemeToggleButton({
   className = "",
-  variant = "circle",
-  blur = false,
 }) {
   const { theme, toggleTheme } = useTheme();
   const { isPlaying } = usePlayer();
   const isDark = theme === "dark";
 
-  const handleToggle = (e) => {
-    let clickX = window.innerWidth - 70;
-    let clickY = 32;
-    if (e?.currentTarget) {
-      const rect = e.currentTarget.getBoundingClientRect();
-      clickX = Math.round(rect.left + rect.width / 2);
-      clickY = Math.round(rect.top + rect.height / 2);
-    }
-    toggleTheme({ variant, x: clickX, y: clickY, start: `${clickX}px ${clickY}px`, blur });
+  const handleToggle = () => {
+    toggleTheme();
   };
 
   return (
