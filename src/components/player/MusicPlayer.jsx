@@ -82,8 +82,7 @@ export default function MusicPlayer() {
           }
         }}
         className={`
-          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer lg:cursor-default
-          lg:static lg:h-[92px] lg:rounded-none lg:border-t lg:border-x-0 lg:border-b-0 lg:px-4 lg:shadow-none
+          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer lg:cursor-default overflow-hidden lg:overflow-visible
           ${
             theme === "dark"
               ? "bg-[#181818]/80 border-white/10 text-white lg:bg-black lg:border-white/[0.08]"
@@ -91,33 +90,40 @@ export default function MusicPlayer() {
           }
         `}
       >
-        {/* Mobile Progress Line Indicator across top of mini player */}
-        <div className="absolute top-0 left-0 right-0 h-[2.5px] bg-white/10 rounded-t-xl overflow-hidden lg:hidden">
+        {/* Mobile Full-Card Low-Opacity Progress Fill Background */}
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl lg:hidden">
           <div
-            className="h-full bg-red-500 transition-all duration-200"
-            style={{ width: `${progress}%` }}
+            className={`
+              h-full transition-all duration-200 ease-linear
+              ${
+                theme === "dark"
+                  ? "bg-gradient-to-r from-red-500/25 via-red-500/20 to-rose-500/30"
+                  : "bg-gradient-to-r from-red-500/18 via-red-500/14 to-rose-500/22"
+              }
+            `}
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
           />
         </div>
 
-        {/* LEFT: Current Track Artwork & Meta + Favorite Heart */}
-        <div className="flex min-w-0 flex-1 items-center gap-3 lg:w-[30%] lg:flex-none">
+        {/* LEFT: Current Track Artwork & Meta + Favorite Heart + Progress Percentage */}
+        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 lg:w-[30%] lg:flex-none">
           <motion.img
             key={currentTrack.image}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             src={currentTrack.image}
             alt={currentTrack.title}
-            className="h-12 w-12 rounded-lg object-cover shadow-sm lg:h-[58px] lg:w-[58px] shrink-0"
+            className="h-11 w-11 rounded-lg object-cover shadow-sm lg:h-[58px] lg:w-[58px] shrink-0"
           />
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[13.5px] font-bold lg:text-[14.5px]">
+            <p className="truncate text-[13px] font-bold lg:text-[14.5px]">
               {currentTrack.title}
             </p>
 
             <p
               className={`
-                mt-[2px] truncate text-[11.5px] lg:text-[12px]
+                mt-[2px] truncate text-[11px] lg:text-[12px]
                 ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
               `}
             >
@@ -156,6 +162,23 @@ export default function MusicPlayer() {
               className={liked ? "text-red-500" : ""}
             />
           </motion.button>
+
+          {/* Mobile Progress Percentage beside Favorite Heart */}
+          <div className="lg:hidden shrink-0 flex items-center">
+            <span
+              className={`
+                text-[10px] sm:text-[10.5px] font-black tabular-nums px-1.5 py-0.5 rounded-full
+                ${
+                  theme === "dark"
+                    ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                    : "bg-red-50 text-red-600 border border-red-200"
+                }
+              `}
+              title="Song progress"
+            >
+              {Math.round(progress || 0)}%
+            </span>
+          </div>
         </div>
 
         {/* CENTER: Desktop Audio Controls & Scrubbing Progress Bar */}
@@ -350,7 +373,7 @@ export default function MusicPlayer() {
         </div>
 
         {/* Mobile Mini-Player Play/Pause Button */}
-        <div className="flex items-center gap-2 lg:hidden ml-auto">
+        <div className="relative z-10 flex items-center gap-2 lg:hidden ml-auto">
           <motion.button
             whileTap={{ scale: 0.8 }}
             onClick={(e) => {
