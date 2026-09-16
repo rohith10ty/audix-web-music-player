@@ -82,12 +82,12 @@ export default function MusicPlayer() {
           }
         }}
         className={`
-          fixed bottom-[70px] left-2 right-2 z-50 flex h-[68px] items-center rounded-xl border px-3 shadow-2xl backdrop-blur-2xl transition-colors duration-200 cursor-pointer lg:cursor-default
+          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer lg:cursor-default
           lg:static lg:h-[92px] lg:rounded-none lg:border-t lg:border-x-0 lg:border-b-0 lg:px-4 lg:shadow-none
           ${
             theme === "dark"
-              ? "bg-[#181818]/95 border-white/[0.08] text-white lg:bg-black lg:border-white/[0.08]"
-              : "bg-[#faf8f5]/95 border-stone-300/80 text-stone-800 lg:bg-[#faf8f5] lg:border-stone-300/70"
+              ? "bg-[#181818]/80 border-white/10 text-white lg:bg-black lg:border-white/[0.08]"
+              : "bg-[#faf8f5]/80 border-stone-300/70 text-stone-800 lg:bg-[#faf8f5] lg:border-stone-300/70"
           }
         `}
       >

@@ -304,24 +304,8 @@ export default function Topbar() {
           </div>
         </div>
 
-        {/* RIGHT: Mobile Search + Dark/Light Mode Switcher + Notifications + Profile / Login / Signup */}
+        {/* RIGHT: Dark/Light Mode Switcher + Notifications + Profile / Login / Signup */}
         <div className="flex items-center justify-end gap-1.5 sm:gap-3 shrink-0 z-10">
-          {/* Mobile Search Button */}
-          <button
-            onClick={() => navigate("/search")}
-            aria-label="Search"
-            className={`
-              md:hidden flex h-9 w-9 items-center justify-center rounded-full transition cursor-pointer
-              ${
-                theme === "dark"
-                  ? "text-[#b3b3b3] hover:text-white hover:bg-white/10"
-                  : "text-stone-600 hover:text-stone-900 hover:bg-[#ece7de]"
-              }
-            `}
-          >
-            <Search size={18} />
-          </button>
-
           {/* Theme Toggle Button with View Transition Ripple */}
           <ThemeToggleButton variant="circle" start="top-right" />
 
