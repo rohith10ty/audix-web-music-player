@@ -17,7 +17,7 @@ const items = [
   {
     title: "Your Library",
     icon: Library,
-    to: "/playlist/liked",
+    to: "/library",
   },
 ];
 

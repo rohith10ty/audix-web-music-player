@@ -402,7 +402,7 @@ export default function Sidebar() {
                 `}
               >
                 <p className="font-bold text-[14px] leading-tight">
-                  Let's find some podcasts to follow
+                  Explore new music & hits
                 </p>
                 <p
                   className={`
@@ -410,7 +410,7 @@ export default function Sidebar() {
                     ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-600"}
                   `}
                 >
-                  We'll keep you updated on new episodes and trending shows.
+                  Discover trending songs, artists, and playlists curated for you.
                 </p>
                 <button
                   onClick={() => navigate("/search")}
@@ -423,7 +423,7 @@ export default function Sidebar() {
                     }
                   `}
                 >
-                  Browse podcasts
+                  Explore music
                 </button>
               </div>
             </div>

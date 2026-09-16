@@ -17,58 +17,6 @@ const LANGUAGES = [
   "Hindi",
   "Malayalam",
   "Kannada",
-  "Podcasts",
-];
-
-const PODCAST_ITEMS = [
-  {
-    id: "ted-talks",
-    title: "TED Talks Daily",
-    subtitle: "Thought-provoking ideas daily from the world's leading thinkers.",
-    image:
-      "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
-  {
-    id: "huberman-lab",
-    title: "Huberman Lab",
-    subtitle: "Science & science-based tools for everyday life & fitness.",
-    image:
-      "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
-  {
-    id: "the-ranveer-show",
-    title: "The Ranveer Show (TRS)",
-    subtitle: "India's smartest podcast on mindset, spirituality & business.",
-    image:
-      "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
-  {
-    id: "nikhil-kamath",
-    title: "WTF is? with Nikhil Kamath",
-    subtitle: "In-depth candid conversations on industry disruptors & culture.",
-    image:
-      "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
-  {
-    id: "jay-shetty",
-    title: "On Purpose with Jay Shetty",
-    subtitle: "Fascinating conversations to make you happier and healthier.",
-    image:
-      "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
-  {
-    id: "finshots-daily",
-    title: "Finshots Daily",
-    subtitle: "Daily financial and economic updates in 5-minute bytes.",
-    image:
-      "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=500&q=85",
-    type: "podcast",
-  },
 ];
 
 export default function Home() {
@@ -133,10 +81,6 @@ export default function Home() {
 
   // Top 6 Trending Quick Picks (Real songs, immediate 1-click play)
   const topQuickPicks = useMemo(() => {
-    if (selectedLanguage === "Podcasts") {
-      return [];
-    }
-
     if (selectedLanguage === "All") {
       // Pick the top trending hits across languages
       const multiLangTop = [
@@ -156,23 +100,8 @@ export default function Home() {
     return langSongs.slice(0, 6);
   }, [selectedLanguage]);
 
-  // Dynamic Categorized Music Collections (Trending, Romance, Party, Artists, Podcasts)
+  // Dynamic Categorized Music Collections (Trending, Romance, Party, Artists)
   const categorizedSections = useMemo(() => {
-    if (selectedLanguage === "Podcasts") {
-      return [
-        {
-          title: "🎙️ Trending Podcasts & Shows",
-          language: "Podcasts",
-          items: PODCAST_ITEMS,
-        },
-        {
-          title: "💡 Mindset, Business & Insights",
-          language: "Podcasts",
-          items: PODCAST_ITEMS.slice(2, 6),
-        },
-      ];
-    }
-
     // When JioSaavn API returns live structured sections
     if (liveSections && liveSections.length > 0) {
       return liveSections;
@@ -262,11 +191,6 @@ export default function Home() {
             type: "artist",
             round: true,
           })),
-        },
-        {
-          title: "🎙️ Trending Podcasts",
-          language: "All",
-          items: PODCAST_ITEMS.slice(0, 5),
         },
       ];
     }

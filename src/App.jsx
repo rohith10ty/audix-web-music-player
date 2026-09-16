@@ -2,7 +2,6 @@ import { Route, Routes } from "react-router-dom";
 
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
-import NowPlaying from "@/components/layout/NowPlaying";
 import MobileNav from "@/components/layout/MobileNav";
 import MusicPlayer from "@/components/player/MusicPlayer";
 import SmoothScroll from "@/components/common/SmoothScroll";
@@ -11,6 +10,7 @@ import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import Playlist from "@/pages/Playlist";
 import Artist from "@/pages/Artist";
+import Library from "@/pages/Library";
 import { useTheme } from "@/context/ThemeContext";
 
 export default function App() {
@@ -37,7 +37,6 @@ export default function App() {
           grid min-h-0 gap-2
           px-2 pb-2
           lg:grid-cols-[260px_minmax(0,1fr)]
-          2xl:grid-cols-[270px_minmax(0,1fr)_300px]
         "
       >
         <Sidebar />
@@ -45,12 +44,11 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/search" element={<Search />} />
+          <Route path="/library" element={<Library />} />
           <Route path="/playlist/:id" element={<Playlist />} />
           <Route path="/artist/:id" element={<Artist />} />
           <Route path="*" element={<Home />} />
         </Routes>
-
-        <NowPlaying />
       </div>
 
       <MusicPlayer />
