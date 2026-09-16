@@ -1,0 +1,343 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-heading: "Outfit", sans-serif;
+  --font-sans: "Outfit", sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+}
+
+:root {
+  --background: #ece7de;
+  --foreground: #1c1917;
+  --card: #faf8f5;
+  --card-foreground: #1c1917;
+  --panel-bg: #faf8f5;
+  --panel-border: rgba(120, 113, 108, 0.16);
+  --page-bg: #f5f2eb;
+  --text-main: #1c1917;
+  --text-muted: #78716c;
+  --pill-bg: rgba(120, 113, 108, 0.08);
+  --pill-border: rgba(120, 113, 108, 0.18);
+  --range-active: #ef4444;
+  --range-bg: #d6cfc4;
+  --player-bg: #faf8f5;
+}
+
+html.dark, :root.dark, body.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #181818;
+  --card-foreground: #ffffff;
+  --panel-bg: #121212;
+  --panel-border: rgba(255, 255, 255, 0.06);
+  --page-bg: #121212;
+  --text-main: #ffffff;
+  --text-muted: #a7a7a7;
+  --pill-bg: rgba(255, 255, 255, 0.08);
+  --pill-border: rgba(255, 255, 255, 0.07);
+  --range-active: #ef4444;
+  --range-bg: #4d4d4d;
+  --player-bg: #000000;
+}
+
+/* Base styles */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  min-width: 320px;
+  height: 100%;
+}
+
+html {
+  transition: background-color 0.25s ease, color 0.25s ease;
+  font-family: "Outfit", sans-serif;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+  font-family:
+    "Outfit",
+    Inter,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+.dark body {
+  background: #000000;
+  color: #ffffff;
+}
+
+.light body {
+  background: #ece7de;
+  color: #1c1917;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: "Outfit", sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
+
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+::selection {
+  background: rgba(239, 68, 68, 0.35);
+  color: inherit;
+}
+
+/* Universal Scrollbar Elimination - Smooth scrolling without visible scrollbars */
+*,
+*::before,
+*::after {
+  scrollbar-width: none !important; /* Firefox */
+  -ms-overflow-style: none !important; /* IE & Edge */
+}
+
+*::-webkit-scrollbar {
+  display: none !important; /* Chrome, Safari, Edge, Opera */
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+}
+
+/* Main panels */
+.spotify-panel {
+  border-radius: 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Center main page */
+.spotify-page {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: auto !important;
+  overscroll-behavior-y: contain;
+  border-radius: 12px;
+  background: var(--page-bg);
+  transition: background-color 0.25s ease;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.spotify-page::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.sidebar-scroll-container,
+.now-playing-scroll-container,
+.spotify-scrollbar {
+  scroll-behavior: auto !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.sidebar-scroll-container::-webkit-scrollbar,
+.now-playing-scroll-container::-webkit-scrollbar,
+.spotify-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Glass & Filter pills */
+.glass-pill {
+  background: var(--pill-bg);
+  border: 1px solid var(--pill-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: all 0.2s ease;
+}
+
+/* Range inputs */
+.spotify-range {
+  --progress: 0%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  border-radius: 100px;
+  outline: none;
+  cursor: pointer;
+}
+
+.dark .spotify-range {
+  background: linear-gradient(
+    to right,
+    #ef4444 0%,
+    #ef4444 var(--progress),
+    #404040 var(--progress),
+    #404040 100%
+  );
+}
+
+.light .spotify-range {
+  background: linear-gradient(
+    to right,
+    #ef4444 0%,
+    #ef4444 var(--progress),
+    #d6cfc4 var(--progress),
+    #d6cfc4 100%
+  );
+}
+
+.spotify-range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  opacity: 0;
+  transition: opacity 150ms ease, transform 150ms ease;
+  background: #ef4444;
+}
+
+.spotify-range:hover::-webkit-slider-thumb {
+  opacity: 1;
+}
+
+.spotify-range::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.spotify-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 999px;
+  opacity: 0;
+  background: #ef4444;
+}
+
+.spotify-range:hover::-moz-range-thumb {
+  opacity: 1;
+}
+
+/* Smooth animations */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (max-width: 1023px) {
+  .spotify-page {
+    border-radius: 0;
+  }
+}
+
+/* Easing curves for View Transitions */
+:root {
+  --expo-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --expo-in: cubic-bezier(0.7, 0, 0.84, 0);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-image-pair(root) {
+  isolation: isolate;
+}
+
+::view-transition-new(root) {
+  z-index: 999999;
+  will-change: clip-path;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+/* Cute Song Playing Wave Animations */
+@keyframes cute-wave-1 {
+  0%, 100% { height: 4px; }
+  50% { height: 14px; }
+}
+@keyframes cute-wave-2 {
+  0%, 100% { height: 14px; }
+  50% { height: 5px; }
+}
+@keyframes cute-wave-3 {
+  0%, 100% { height: 6px; }
+  50% { height: 16px; }
+}
+@keyframes cute-wave-4 {
+  0%, 100% { height: 12px; }
+  50% { height: 4px; }
+}
+
+.animate-wave-1 {
+  animation: cute-wave-1 0.75s ease-in-out infinite;
+}
+.animate-wave-2 {
+  animation: cute-wave-2 0.65s ease-in-out infinite 0.15s;
+}
+.animate-wave-3 {
+  animation: cute-wave-3 0.85s ease-in-out infinite 0.3s;
+}
+.animate-wave-4 {
+  animation: cute-wave-4 0.7s ease-in-out infinite 0.1s;
+}
