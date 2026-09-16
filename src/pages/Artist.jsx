@@ -107,7 +107,7 @@ export default function Artist() {
       </section>
 
       {/* Main Section Controls & Content */}
-      <div className="px-4 pb-36 sm:pb-24 lg:px-6 lg:pb-6">
+      <div className="px-4 pb-36 sm:pb-24 lg:px-6 lg:pb-16">
         <div className="mb-4 flex items-center gap-3">
           <motion.button
             whileHover={{ scale: 1.07 }}

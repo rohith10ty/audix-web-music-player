@@ -2,6 +2,7 @@ import {
   Activity,
   ChevronDown,
   Heart,
+  Info,
   ListMusic,
   Loader2,
   Maximize2,
@@ -63,6 +64,7 @@ export default function MusicPlayer() {
   const [showQueueModal, setShowQueueModal] = useState(false);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [showMobilePlayer, setShowMobilePlayer] = useState(false);
+  const [showSongInfoModal, setShowSongInfoModal] = useState(false);
   const [useWaveformMode, setUseWaveformMode] = useState(true);
 
   if (isCreatePlaylistOpen) return null;
@@ -82,11 +84,12 @@ export default function MusicPlayer() {
           }
         }}
         className={`
-          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer lg:cursor-default overflow-hidden lg:overflow-visible
+          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer overflow-hidden
+          lg:fixed lg:bottom-0 lg:left-0 lg:right-0 lg:z-50 lg:h-[88px] lg:cursor-default lg:overflow-visible lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t lg:px-6
           ${
             theme === "dark"
-              ? "bg-[#181818]/80 border-white/10 text-white lg:bg-black lg:border-white/[0.08]"
-              : "bg-[#faf8f5]/80 border-stone-300/70 text-stone-800 lg:bg-[#faf8f5] lg:border-stone-300/70"
+              ? "bg-[#181818]/80 border-white/10 text-white lg:bg-[#121212]/95 lg:border-white/10"
+              : "bg-[#faf8f5]/80 border-stone-300/70 text-stone-800 lg:bg-[#faf8f5]/95 lg:border-stone-300/80"
           }
         `}
       >
@@ -126,25 +129,41 @@ export default function MusicPlayer() {
           />
         </div>
 
-        {/* LEFT: Current Track Artwork & Meta + (Desktop Favorite Heart) */}
-        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 lg:w-[30%] lg:flex-none">
+        {/* LEFT: Current Track Artwork & Meta + (Desktop Favorite Heart + Info Credits Button) */}
+        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 lg:w-[320px] lg:flex-none">
           <motion.img
             key={currentTrack.image}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             src={currentTrack.image}
             alt={currentTrack.title}
-            className="h-11 w-11 rounded-lg object-cover shadow-sm lg:h-[58px] lg:w-[58px] shrink-0"
+            onClick={(e) => {
+              if (window.innerWidth >= 1024) {
+                e.stopPropagation();
+                setShowSongInfoModal(true);
+              }
+            }}
+            className="h-11 w-11 rounded-lg object-cover shadow-sm lg:h-[54px] lg:w-[54px] lg:rounded-md shrink-0 lg:cursor-pointer hover:opacity-90"
+            title="Click to view song info & credits"
           />
 
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-bold lg:text-[14.5px]">
+          <div
+            onClick={(e) => {
+              if (window.innerWidth >= 1024) {
+                e.stopPropagation();
+                setShowSongInfoModal(true);
+              }
+            }}
+            className="min-w-0 flex-1 lg:flex-initial lg:max-w-[170px] lg:cursor-pointer"
+            title="Click to view song info & credits"
+          >
+            <p className="truncate text-[13px] font-bold lg:text-[14px] hover:underline">
               {currentTrack.title}
             </p>
 
             <p
               className={`
-                mt-[2px] truncate text-[11px] lg:text-[12px]
+                mt-[2px] truncate text-[11px] lg:text-[11.5px]
                 ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
               `}
             >
@@ -159,34 +178,57 @@ export default function MusicPlayer() {
 
           {/* Desktop Favorite Heart Button */}
           <motion.button
-            whileHover={{ scale: 1.2 }}
+            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.85 }}
             onClick={(e) => {
               e.stopPropagation();
               toggleLike(currentTrack);
             }}
             className={`
-              hidden lg:flex shrink-0 p-1 transition cursor-pointer
+              hidden lg:flex shrink-0 p-1.5 ml-1 transition cursor-pointer rounded-full
               ${
                 liked
                   ? "text-red-500"
                   : theme === "dark"
-                  ? "text-[#a7a7a7] hover:text-white"
-                  : "text-stone-400 hover:text-stone-900"
+                  ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
               }
             `}
             title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
           >
             <Heart
-              size={19}
+              size={18}
               fill={liked ? "currentColor" : "none"}
               className={liked ? "text-red-500" : ""}
             />
           </motion.button>
+
+          {/* Desktop Song Information (i) Credits Button */}
+          <motion.button
+            whileHover={{ scale: 1.15 }}
+            whileTap={{ scale: 0.85 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowSongInfoModal(true);
+            }}
+            className={`
+              hidden lg:flex shrink-0 p-1.5 transition cursor-pointer rounded-full
+              ${
+                showSongInfoModal
+                  ? "text-red-500 bg-red-500/10"
+                  : theme === "dark"
+                  ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
+              }
+            `}
+            title="Song Information & Credits"
+          >
+            <Info size={18} />
+          </motion.button>
         </div>
 
         {/* CENTER: Desktop Audio Controls & Scrubbing Progress Bar */}
-        <div className="hidden min-w-0 flex-1 flex-col items-center lg:flex">
+        <div className="hidden min-w-0 flex-1 flex-col items-center lg:flex max-w-[680px] mx-auto">
           <div className="mb-2 flex items-center gap-5">
             {/* Shuffle */}
             <motion.button
@@ -293,8 +335,8 @@ export default function MusicPlayer() {
             </motion.button>
           </div>
 
-          {/* Progress & Scrolling Waveform Seek Bar */}
-          <div className="flex w-full max-w-[620px] items-center gap-3">
+          {/* Progress & Scrolling Waveform Seek Bar + Progress % Badge */}
+          <div className="flex w-full items-center gap-2.5 sm:gap-3">
             <span
               className={`
               w-9 text-right text-[11px] font-medium shrink-0
@@ -350,29 +392,20 @@ export default function MusicPlayer() {
               {currentTrack.duration}
             </span>
 
-            {/* Toggle Waveform Mode Button */}
-            <motion.button
-              whileHover={{ scale: 1.15 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setUseWaveformMode((v) => !v)}
+            {/* Desktop Song Percentage Pill Badge */}
+            <span
               className={`
-                p-1 rounded-md transition cursor-pointer shrink-0
+                text-[10px] font-black tabular-nums px-2 py-0.5 rounded-full select-none shrink-0
                 ${
-                  useWaveformMode
-                    ? "text-red-500 bg-red-500/10"
-                    : theme === "dark"
-                    ? "text-[#888] hover:text-white"
-                    : "text-stone-400 hover:text-stone-800"
+                  theme === "dark"
+                    ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                    : "bg-red-100/90 text-red-600 border border-red-200"
                 }
               `}
-              title={
-                useWaveformMode
-                  ? "Waveform visualizer active (Click for classic slider)"
-                  : "Classic slider active (Click for live waveform visualizer)"
-              }
+              title="Song progress percentage"
             >
-              <Activity size={15} />
-            </motion.button>
+              {Math.round(progress || 0)}%
+            </span>
           </div>
         </div>
 
@@ -448,7 +481,31 @@ export default function MusicPlayer() {
         </div>
 
         {/* RIGHT: Auxiliary Controls (Queue, Volume, Fullscreen) */}
-        <div className="hidden w-[30%] items-center justify-end gap-3 lg:flex">
+        <div className="hidden lg:w-[320px] lg:flex-none items-center justify-end gap-3 lg:flex">
+          {/* Toggle Waveform Mode Button */}
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setUseWaveformMode((v) => !v)}
+            className={`
+              p-1.5 rounded-full transition cursor-pointer
+              ${
+                useWaveformMode
+                  ? "text-red-500 bg-red-500/10"
+                  : theme === "dark"
+                  ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                  : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+              }
+            `}
+            title={
+              useWaveformMode
+                ? "Waveform visualizer active (Click for classic slider)"
+                : "Classic slider active (Click for live waveform visualizer)"
+            }
+          >
+            <Activity size={16} />
+          </motion.button>
+
           {/* Queue Button */}
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -502,7 +559,7 @@ export default function MusicPlayer() {
               max="100"
               value={isMuted ? 0 : volume}
               onChange={(e) => handleVolumeChange(e.target.value)}
-              className="spotify-range w-[88px]"
+              className="spotify-range w-[84px]"
               style={{
                 "--progress": `${isMuted ? 0 : volume}%`,
               }}
@@ -547,8 +604,8 @@ export default function MusicPlayer() {
               }
             `}
           >
-            {/* Top Bar: Pull down chevron, Title & Queue */}
-            <div className="flex items-center justify-between h-10 shrink-0">
+            {/* Top Bar: Pull down chevron, Title, Info & Queue */}
+            <div className="flex items-center justify-between h-10 shrink-0 gap-2">
               <button
                 onClick={() => setShowMobilePlayer(false)}
                 className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
@@ -566,13 +623,23 @@ export default function MusicPlayer() {
                 </p>
               </div>
 
-              <button
-                onClick={() => setShowQueueModal(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
-                title="View Queue"
-              >
-                <ListMusic size={18} />
-              </button>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setShowSongInfoModal(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
+                  title="Song Credits & Information"
+                >
+                  <Info size={17} />
+                </button>
+
+                <button
+                  onClick={() => setShowQueueModal(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
+                  title="View Queue"
+                >
+                  <ListMusic size={18} />
+                </button>
+              </div>
             </div>
 
             {/* Main Center: Scaled Album Artwork */}
@@ -749,12 +816,16 @@ export default function MusicPlayer() {
               </button>
             </div>
 
-            {/* Bottom Utilities: Audio Quality badge */}
-            <div className="flex items-center justify-between text-[11px] opacity-60 border-t border-white/10 pt-2 shrink-0 px-1">
-              <span className="flex items-center gap-1.5 font-medium">
+            {/* Bottom Utilities: Audio Quality badge & Credits trigger */}
+            <div className="flex items-center justify-between text-[11px] opacity-75 border-t border-white/10 pt-2 shrink-0 px-1">
+              <button
+                onClick={() => setShowSongInfoModal(true)}
+                className="flex items-center gap-1.5 font-medium hover:text-red-400 transition cursor-pointer"
+                title="View Song Credits & Info"
+              >
                 <Sparkles size={12} className="text-amber-400" />
-                Dolby 320 kbps • Lossless
-              </span>
+                Dolby 320 kbps • Credits
+              </button>
 
               <button
                 onClick={() => setShowMobilePlayer(false)}
@@ -778,21 +849,32 @@ export default function MusicPlayer() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[9999] flex flex-col justify-between items-center bg-black/95 p-4 md:p-8 backdrop-blur-2xl text-white overflow-y-auto spotify-scrollbar"
           >
-            {/* Top Bar with Minimize Button */}
+            {/* Top Bar with Info & Minimize Buttons */}
             <div className="w-full flex items-center justify-between shrink-0 max-w-4xl mb-2">
               <div className="flex items-center gap-2 text-xs font-bold text-red-400 uppercase tracking-wider">
                 <Sparkles size={14} className="text-amber-400" />
                 Audix Fullscreen Player
               </div>
 
-              <button
-                onClick={() => setShowFullscreenModal(false)}
-                className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer"
-                title="Exit Fullscreen"
-              >
-                <Minimize2 size={16} />
-                <span>Exit Fullscreen</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowSongInfoModal(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer"
+                  title="Song Information & Credits"
+                >
+                  <Info size={15} />
+                  <span>Credits</span>
+                </button>
+
+                <button
+                  onClick={() => setShowFullscreenModal(false)}
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer"
+                  title="Exit Fullscreen"
+                >
+                  <Minimize2 size={16} />
+                  <span>Exit Fullscreen</span>
+                </button>
+              </div>
             </div>
 
             {/* Album Art with Responsive Max-Height */}
@@ -1004,6 +1086,287 @@ export default function MusicPlayer() {
           </motion.div>
         </AnimatePresence>
       )}
+
+      {/* ========================================================================= */}
+      {/* 5. SONG INFORMATION & CREDITS MODAL                                      */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {showSongInfoModal && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSongInfoModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md cursor-pointer"
+            />
+
+            {/* Modal Dialog Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`
+                relative z-10 w-full max-w-lg max-h-[90vh] overflow-hidden rounded-2xl border shadow-2xl flex flex-col
+                ${
+                  theme === "dark"
+                    ? "bg-[#181818] border-white/10 text-white"
+                    : "bg-[#faf8f5] border-stone-300 text-stone-900"
+                }
+              `}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between border-b px-5 py-4 border-stone-300/60 dark:border-white/10 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/15 text-red-500">
+                    <Info size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold leading-tight">
+                      Song Information & Credits
+                    </h3>
+                    <p className="text-[11px] opacity-60">
+                      High-fidelity metadata & production details
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowSongInfoModal(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full opacity-70 hover:opacity-100 hover:bg-white/10 transition cursor-pointer"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Scrollable Content Body */}
+              <div className="spotify-scrollbar flex-1 overflow-y-auto p-5 space-y-4">
+                {/* Hero Header Card */}
+                <div
+                  className={`
+                    flex items-center gap-4 p-3.5 rounded-xl border
+                    ${
+                      theme === "dark"
+                        ? "bg-white/[0.03] border-white/[0.08]"
+                        : "bg-stone-100/80 border-stone-200"
+                    }
+                  `}
+                >
+                  <img
+                    src={currentTrack.image}
+                    alt={currentTrack.title}
+                    className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shadow-lg shrink-0 border border-white/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 mb-1.5">
+                      <Sparkles size={10} className="text-amber-400" />
+                      320 kbps Lossless
+                    </span>
+                    <h4 className="text-base sm:text-lg font-black truncate leading-snug">
+                      {currentTrack.title}
+                    </h4>
+                    <p className="text-xs sm:text-sm font-semibold opacity-75 truncate">
+                      {currentTrack.artist}
+                    </p>
+                    <p className="text-[11.5px] opacity-60 truncate mt-0.5">
+                      {currentTrack.album || "Single"} • {currentTrack.year || "2024"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Credits Information Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                  {/* Performed By / Singers */}
+                  <div
+                    className={`
+                      p-3 rounded-xl border
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-stone-100/60 border-stone-200/80"
+                      }
+                    `}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                      Performed By (Singers)
+                    </p>
+                    <p className="font-semibold leading-relaxed">
+                      {currentTrack.singers || currentTrack.artist}
+                    </p>
+                  </div>
+
+                  {/* Music Director / Composers */}
+                  <div
+                    className={`
+                      p-3 rounded-xl border
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-stone-100/60 border-stone-200/80"
+                      }
+                    `}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                      Music Director / Composer
+                    </p>
+                    <p className="font-semibold leading-relaxed">
+                      {currentTrack.musicDirector || currentTrack.artist || "Audix Studio Originals"}
+                    </p>
+                  </div>
+
+                  {/* Album / Movie */}
+                  <div
+                    className={`
+                      p-3 rounded-xl border
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-stone-100/60 border-stone-200/80"
+                      }
+                    `}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                      Album / Soundtrack
+                    </p>
+                    <p className="font-semibold leading-relaxed">
+                      {currentTrack.album || "Original Sound Recording"}
+                    </p>
+                  </div>
+
+                  {/* Language & Genre */}
+                  <div
+                    className={`
+                      p-3 rounded-xl border
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-stone-100/60 border-stone-200/80"
+                      }
+                    `}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                      Language & Genre
+                    </p>
+                    <p className="font-semibold leading-relaxed">
+                      {currentTrack.language || "Telugu"} • {currentTrack.genre || "Soundtrack"}
+                    </p>
+                  </div>
+
+                  {/* Cast / Starring (if present) */}
+                  {currentTrack.starring && (
+                    <div
+                      className={`
+                        p-3 rounded-xl border sm:col-span-2
+                        ${
+                          theme === "dark"
+                            ? "bg-white/[0.02] border-white/[0.06]"
+                            : "bg-stone-100/60 border-stone-200/80"
+                        }
+                      `}
+                    >
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                        Starring / Featured Cast
+                      </p>
+                      <p className="font-semibold leading-relaxed">
+                        {currentTrack.starring}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Record Label / Copyright */}
+                  <div
+                    className={`
+                      p-3 rounded-xl border sm:col-span-2
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.06]"
+                          : "bg-stone-100/60 border-stone-200/80"
+                      }
+                    `}
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-red-400 mb-1">
+                      Record Label & Copyright
+                    </p>
+                    <p className="font-semibold leading-relaxed opacity-85">
+                      {currentTrack.label || "© Audix Media Network / Official Licensee"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Technical Stream Specifications */}
+                <div
+                  className={`
+                    p-3.5 rounded-xl border text-[11.5px] space-y-2
+                    ${
+                      theme === "dark"
+                        ? "bg-red-950/20 border-red-500/20"
+                        : "bg-red-50/60 border-red-200"
+                    }
+                  `}
+                >
+                  <p className="font-bold text-red-500 flex items-center gap-1.5">
+                    <Sparkles size={13} />
+                    Audio Stream Specifications
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="opacity-60 block text-[10px]">BITRATE & CODEC</span>
+                      <span className="font-bold">320 kbps MP4/AAC Stereo</span>
+                    </div>
+                    <div>
+                      <span className="opacity-60 block text-[10px]">DELIVERY PROTOCOL</span>
+                      <span className="font-bold">DES-ECB Decrypted CDN</span>
+                    </div>
+                    <div>
+                      <span className="opacity-60 block text-[10px]">SAMPLE RATE</span>
+                      <span className="font-bold">44.1 kHz • 16-bit Studio</span>
+                    </div>
+                    <div>
+                      <span className="opacity-60 block text-[10px]">PLAYBACK DURATION</span>
+                      <span className="font-bold">{currentTrack.duration} ({currentTrack.seconds || 240}s)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div className="flex items-center justify-between border-t px-5 py-3.5 border-stone-300/60 dark:border-white/10 shrink-0">
+                <button
+                  onClick={() => toggleLike(currentTrack)}
+                  className={`
+                    flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl transition cursor-pointer
+                    ${
+                      liked
+                        ? "text-red-500 bg-red-500/15"
+                        : theme === "dark"
+                        ? "bg-white/10 hover:bg-white/15 text-white"
+                        : "bg-stone-200/80 hover:bg-stone-200 text-stone-900"
+                    }
+                  `}
+                >
+                  <Heart
+                    size={16}
+                    fill={liked ? "currentColor" : "none"}
+                    className={liked ? "text-red-500" : ""}
+                  />
+                  <span>{liked ? "Saved to Liked Songs" : "Save to Liked Songs"}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowSongInfoModal(false)}
+                  className="px-4 py-2 text-xs font-bold rounded-xl bg-red-500 text-white hover:bg-red-400 transition cursor-pointer shadow-md"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

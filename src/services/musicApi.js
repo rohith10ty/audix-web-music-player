@@ -132,6 +132,15 @@ export function formatDirectSaavnSong(raw) {
     ? raw.language.charAt(0).toUpperCase() + raw.language.slice(1).toLowerCase()
     : "Telugu";
 
+  // Additional credits and metadata
+  const musicDirector = decodeHtmlEntities(
+    raw.music || raw.music_director || raw.composer || raw.composers || ""
+  );
+  const starring = decodeHtmlEntities(raw.starring || raw.actors || raw.cast || "");
+  const label = decodeHtmlEntities(
+    raw.copyright_text || raw.label || raw.album_artist || raw.record_label || ""
+  );
+
   return {
     id: String(raw.id || `track-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
     title,
@@ -144,7 +153,13 @@ export function formatDirectSaavnSong(raw) {
     streamUrl: audioUrl,
     language: lang,
     genre: raw.genre || "Soundtrack",
-    year: raw.year || "",
+    year: raw.year || raw.release_date || "",
+    singers: decodeHtmlEntities(raw.singers || artist),
+    musicDirector: musicDirector || "Audix Studio Originals",
+    starring,
+    label: label || "Audix Music Records",
+    bitrate: "320 kbps (Lossless)",
+    hasLossless: true,
     raw,
   };
 }

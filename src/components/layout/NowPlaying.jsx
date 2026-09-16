@@ -14,7 +14,7 @@ export default function NowPlaying() {
   return (
     <aside
       className={`
-        spotify-panel relative hidden min-h-0 overflow-hidden xl:flex flex-col transition-colors duration-200
+        spotify-panel relative hidden min-h-0 overflow-hidden 2xl:flex flex-col transition-colors duration-200
         ${
           theme === "dark"
             ? "bg-[#121212] text-white border-white/[0.06]"

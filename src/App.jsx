@@ -36,8 +36,8 @@ export default function App() {
         className="
           grid min-h-0 gap-2
           px-2 pb-2
-          lg:grid-cols-[280px_minmax(0,1fr)]
-          xl:grid-cols-[290px_minmax(0,1fr)_320px]
+          lg:grid-cols-[260px_minmax(0,1fr)]
+          2xl:grid-cols-[270px_minmax(0,1fr)_300px]
         "
       >
         <Sidebar />

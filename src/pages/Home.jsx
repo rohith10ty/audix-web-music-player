@@ -433,7 +433,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="relative z-10 px-4 pb-36 sm:pb-24 pt-4 sm:px-6 lg:pb-6">
+      <div className="relative z-10 px-4 pb-36 sm:pb-24 pt-4 sm:px-6 lg:pb-16">
         {/* TOP: Trending Quick Picks (6 direct playable cards) */}
         {topQuickPicks.length > 0 && (
           <div className="mb-8">

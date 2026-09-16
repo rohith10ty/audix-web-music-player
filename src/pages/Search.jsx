@@ -111,7 +111,7 @@ export default function Search() {
         }
       `}
     >
-      <div className="px-4 pb-36 sm:pb-24 pt-4 sm:px-6 lg:pb-6">
+      <div className="px-4 pb-36 sm:pb-24 pt-4 sm:px-6 lg:pb-16">
         {/* Search Input Bar */}
         <div className="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
           <div

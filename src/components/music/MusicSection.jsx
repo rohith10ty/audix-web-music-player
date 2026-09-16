@@ -8,7 +8,7 @@ export default function MusicSection({ title, items, delay = 0 }) {
   const { theme } = useTheme();
   const [showAll, setShowAll] = useState(false);
 
-  const displayedItems = showAll ? items : items.slice(0, 5);
+  const displayedItems = showAll ? items : items.slice(0, 6);
 
   return (
     <section className="mb-9">
@@ -23,7 +23,7 @@ export default function MusicSection({ title, items, delay = 0 }) {
             {title}
           </h2>
 
-          {items.length > 5 && (
+          {items.length > 6 && (
             <button
               onClick={() => setShowAll((prev) => !prev)}
               className={`
@@ -46,9 +46,10 @@ export default function MusicSection({ title, items, delay = 0 }) {
         className="
           grid grid-cols-2 gap-3.5
           sm:grid-cols-3
-          lg:grid-cols-3
-          xl:grid-cols-4
-          2xl:grid-cols-5
+          md:grid-cols-3
+          lg:grid-cols-4
+          xl:grid-cols-5
+          2xl:grid-cols-6
         "
       >
         {displayedItems.map((item, index) => (
