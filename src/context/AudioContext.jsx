@@ -8,7 +8,15 @@ import {
   useState,
 } from "react";
 import { defaultTrack, playlists, songs } from "@/data/musicData";
-import { LIVE_PLAYLIST_THEMES } from "@/services/musicApi";
+import {
+  LIVE_PLAYLIST_THEMES,
+  formatDirectSaavnSong,
+  formatSaavnSong,
+  searchSongs,
+  fetchSongById,
+  decryptSaavnMediaUrl,
+  decodeHtmlEntities,
+} from "@/services/musicApi";
 import {
   auth,
   db,
@@ -29,165 +37,28 @@ import {
 
 export const AudioContext = createContext(null);
 
-// Default Backend API Base URL for JioSaavn API (Public https://saavn.dev/api or custom VITE_JIOSAAVN_API_URL)
-export const API_BASE_URL =
-  import.meta.env.VITE_JIOSAAVN_API_URL || "https://saavn.dev/api";
+export const API_BASE_URL = "/saavn-api";
+
+export {
+  formatDirectSaavnSong,
+  formatSaavnSong,
+  searchSongs,
+  fetchSongById,
+  decryptSaavnMediaUrl,
+};
 
 /**
- * Utility: Decode HTML entities from JioSaavn text fields (e.g. &quot; -> ", &amp; -> &)
- */
-function decodeHtmlEntities(str) {
-  if (!str || typeof str !== "string") return str || "";
-  const txt = document.createElement("textarea");
-  txt.innerHTML = str;
-  return txt.value;
-}
-
-/**
- * Normalizer: Converts raw JioSaavn API song objects into the standard Player Track structure
- */
-export function formatSaavnSong(raw) {
-  if (!raw) return null;
-
-  // Already formatted
-  if (raw.audioUrl && raw.title && raw.image) {
-    return raw;
-  }
-
-  // Pick highest quality streaming URL available (320kbps -> 160kbps -> 96kbps)
-  let audioUrl = "";
-  if (Array.isArray(raw.downloadUrl) && raw.downloadUrl.length > 0) {
-    const sorted = [...raw.downloadUrl].reverse();
-    audioUrl =
-      raw.downloadUrl.find((d) => d.quality === "320kbps")?.url ||
-      raw.downloadUrl.find((d) => d.quality === "160kbps")?.url ||
-      sorted[0]?.url ||
-      sorted[0]?.link ||
-      "";
-  } else if (typeof raw.downloadUrl === "string") {
-    audioUrl = raw.downloadUrl;
-  } else if (raw.url && typeof raw.url === "string" && raw.url.endsWith(".mp3")) {
-    audioUrl = raw.url;
-  }
-
-  // Pick highest quality album image (500x500 -> 150x150 -> 50x50)
-  let image = "";
-  if (Array.isArray(raw.image) && raw.image.length > 0) {
-    image =
-      raw.image.find((i) => i.quality === "500x500")?.url ||
-      raw.image.find((i) => i.quality === "150x150")?.url ||
-      raw.image[raw.image.length - 1]?.url ||
-      raw.image[raw.image.length - 1]?.link ||
-      "";
-  } else if (typeof raw.image === "string") {
-    image = raw.image;
-  }
-
-  // Fallback placeholder image if missing
-  if (!image) {
-    image = "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85";
-  }
-
-  // Primary Artists string
-  let artist = "Unknown Artist";
-  if (typeof raw.primaryArtists === "string" && raw.primaryArtists.trim()) {
-    artist = raw.primaryArtists;
-  } else if (raw.artists?.primary && Array.isArray(raw.artists.primary)) {
-    artist = raw.artists.primary.map((a) => a.name).join(", ");
-  } else if (typeof raw.artist === "string") {
-    artist = raw.artist;
-  }
-
-  // Song title / name
-  const title = decodeHtmlEntities(raw.name || raw.title || "Untitled Song");
-  const albumName = decodeHtmlEntities(
-    typeof raw.album === "object" ? raw.album?.name : raw.album || "Single",
-  );
-
-  // Parse duration
-  const seconds = Number(raw.duration) || 240;
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.floor(seconds % 60);
-  const formattedDuration = `${minutes}:${String(remainingSeconds).padStart(2, "0")}`;
-
-  return {
-    id: String(raw.id || `track-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`),
-    title,
-    artist: decodeHtmlEntities(artist),
-    album: albumName,
-    image,
-    duration: formattedDuration,
-    seconds,
-    audioUrl,
-    streamUrl: audioUrl,
-    language: raw.language ? raw.language.charAt(0).toUpperCase() + raw.language.slice(1) : "Telugu",
-    genre: raw.genre || "Soundtrack",
-    year: raw.year || "",
-    raw,
-  };
-}
-
-/**
- * Async API Helper: Fetch search songs from local JioSaavn API server
+ * Async API Helper: Fetch search songs from JioSaavn API
  */
 export async function fetchSearchSongs(query, page = 1, limit = 20) {
-  if (!query || !query.trim()) return [];
-  try {
-    const url = `${API_BASE_URL}/search/songs?query=${encodeURIComponent(query.trim())}&page=${page}&limit=${limit}`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`JioSaavn API search failed with status: ${res.status}`);
-    }
-    const data = await res.json();
-    const results = data?.data?.results || data?.results || [];
-    return results.map(formatSaavnSong).filter(Boolean);
-  } catch (error) {
-    console.warn("JioSaavn API search unavailable, falling back:", error);
-    // Fallback search within bundled mock library
-    const q = query.toLowerCase().trim();
-    return songs.filter(
-      (s) =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q) ||
-        s.language.toLowerCase().includes(q),
-    );
-  }
+  return searchSongs(query, page, limit);
 }
 
 /**
  * Async API Helper: Fetch single song details by ID from JioSaavn API
  */
 export async function resolveSongDetails(id) {
-  if (!id) return null;
-  const local = songs.find((s) => String(s.id) === String(id));
-  if (local) return local;
-
-  try {
-    const res = await fetch(`${API_BASE_URL}/songs?id=${encodeURIComponent(id)}`);
-    if (res.ok) {
-      const data = await res.json();
-      const results = Array.isArray(data?.data)
-        ? data.data
-        : data?.data?.results || (data?.data ? [data.data] : []);
-      if (results.length > 0) {
-        return formatSaavnSong(results[0]);
-      }
-    }
-  } catch (e) {
-    console.warn("resolveSongDetails API fetch error:", e);
-  }
-
-  // Fallback search by ID
-  try {
-    const searchRes = await fetchSearchSongs(String(id), 1, 1);
-    if (searchRes && searchRes.length > 0) {
-      return searchRes[0];
-    }
-  } catch (e) {
-    console.warn("resolveSongDetails search fallback error:", e);
-  }
-
-  return null;
+  return fetchSongById(id);
 }
 
 /**
