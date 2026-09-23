@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Route, Routes } from "react-router-dom";
 
 import Topbar from "@/components/layout/Topbar";
@@ -5,6 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
 import MusicPlayer from "@/components/player/MusicPlayer";
 import SmoothScroll from "@/components/common/SmoothScroll";
+import SplashScreen from "@/components/common/SplashScreen";
 
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
@@ -15,9 +17,12 @@ import { useTheme } from "@/context/ThemeContext";
 
 export default function App() {
   const { theme } = useTheme();
+  const [showSplash, setShowSplash] = useState(true);
 
   return (
-    <SmoothScroll>
+    <>
+      {showSplash && <SplashScreen onComplete={() => setShowSplash(false)} duration={2400} />}
+      <SmoothScroll>
       <div
       className={`
         grid h-dvh overflow-hidden transition-colors duration-200
@@ -55,5 +60,6 @@ export default function App() {
       <MobileNav />
     </div>
   </SmoothScroll>
+  </>
 );
 }
