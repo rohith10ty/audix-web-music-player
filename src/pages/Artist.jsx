@@ -17,14 +17,9 @@ export default function Artist() {
 
   const [isFollowing, setIsFollowing] = useState(false);
 
-  const artist = artists.find((item) => item.id === id);
-
-  if (!artist) {
-    return <Navigate to="/" replace />;
-  }
-
   // Filter songs by artist or artist language
   const artistSongs = useMemo(() => {
+    if (!artist) return [];
     const directMatches = songs.filter((s) =>
       s.artist.toLowerCase().includes(artist.name.toLowerCase()),
     );
@@ -44,6 +39,10 @@ export default function Artist() {
       track: s,
     }));
   }, [artistSongs]);
+
+  if (!artist) {
+    return <Navigate to="/" replace />;
+  }
 
   const handlePlayAll = () => {
     if (artistSongs.length > 0) {

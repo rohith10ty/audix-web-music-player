@@ -64,7 +64,7 @@ export default function Topbar() {
     userProfile?.name && userProfile.name !== "Guest Listener"
       ? userProfile.name
       : currentUser?.displayName || emailPrefix;
-  const avatarSrc = userProfile?.avatar || currentUser?.photoURL || "";
+  const avatarSrc = userProfile?.avatar || "";
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

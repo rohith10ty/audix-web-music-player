@@ -17,6 +17,7 @@ import {
   X,
   Eye,
   EyeOff,
+  Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +30,7 @@ export default function ProfileModal({ isOpen, onClose }) {
     userProfile,
     currentUser,
     updateUserAvatar,
+    removeUserAvatar,
     updateUserName,
     changeUserPassword,
     sendPasswordReset,
@@ -48,7 +50,7 @@ export default function ProfileModal({ isOpen, onClose }) {
       ? userProfile.name
       : currentUser?.displayName || emailPrefix;
   const displayEmail = userProfile?.email || currentUser?.email || "";
-  const avatarSrc = userProfile?.avatar || currentUser?.photoURL || "";
+  const avatarSrc = userProfile?.avatar || "";
   const initialLetter = displayName ? displayName.trim().charAt(0).toUpperCase() : "A";
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -297,6 +299,27 @@ export default function ProfileModal({ isOpen, onClose }) {
                   <Upload size={12} className="text-red-500" />
                   <span>{avatarSrc ? "Change Photo" : "Upload Photo"}</span>
                 </button>
+
+                {avatarSrc && (
+                  <button
+                    onClick={async () => {
+                      if (removeUserAvatar) await removeUserAvatar();
+                    }}
+                    disabled={isUploadingPhoto}
+                    className={`
+                      flex items-center gap-1 rounded-full px-2.5 py-1 text-[11.5px] font-bold transition shadow-sm cursor-pointer text-rose-400 hover:text-rose-300
+                      ${
+                        theme === "dark"
+                          ? "bg-red-500/10 hover:bg-red-500/20 border border-red-500/20"
+                          : "bg-red-50 hover:bg-red-100 border border-red-200"
+                      }
+                    `}
+                    title="Remove profile photo"
+                  >
+                    <Trash2 size={11} />
+                    <span>Remove</span>
+                  </button>
+                )}
 
                 <ThemeToggleButton variant="circle" start="center" />
 

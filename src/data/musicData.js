@@ -2501,7 +2501,7 @@ export const playlists = [
     "owner": "Audix Telugu",
     "followers": "980K saves",
     "language": "Telugu",
-    "image": "https://c.saavncdn.com/313/Devara-Part-1-Telugu-Telugu-2024-20240929000840-500x500.jpg",
+    "image": "https://c.saavncdn.com/313/Devara-Part-1-Telugu-Telugu-2024-20240926171010-500x500.jpg",
     "tracks": [
       {
         "id": "chuttamalle",

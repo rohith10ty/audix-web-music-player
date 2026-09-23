@@ -345,7 +345,6 @@ export function AudioProvider({ children }) {
 
         const emailPrefix = firebaseUser.email ? firebaseUser.email.split("@")[0] : "Music Lover";
         const initialDisplayName = firebaseUser.displayName || emailPrefix;
-        const initialAvatar = firebaseUser.photoURL || "";
 
         // 1. Immediately hydrate from local storage (0ms latency, zero empty state flash)
         const cachedLiked = getLocalLikedSongs(firebaseUser.uid);
@@ -355,13 +354,13 @@ export function AudioProvider({ children }) {
         if (cachedLiked.length > 0) setLikedSongs(cachedLiked);
         if (cachedPlaylists.length > 0) setCustomPlaylists(cachedPlaylists);
 
-        // Immediate responsive profile state
+        // Immediate responsive profile state (avatar is empty by default unless user uploaded one)
         const initialProfile = {
           uid: firebaseUser.uid,
           name: cachedProfile?.name || initialDisplayName,
           email: firebaseUser.email || cachedProfile?.email || "",
           handle: `@${(cachedProfile?.name || initialDisplayName).toLowerCase().replace(/[^a-z0-9]/g, "")}`,
-          avatar: cachedProfile?.avatar || initialAvatar,
+          avatar: cachedProfile?.avatar || "",
           plan: "Audix Free",
           playlistsCount: cachedPlaylists.length,
           followingCount: 0,
@@ -381,7 +380,7 @@ export function AudioProvider({ children }) {
             uid: firebaseUser.uid,
             name: cachedProfile?.name || initialDisplayName,
             email: firebaseUser.email || "",
-            avatar: cachedProfile?.avatar || initialAvatar,
+            avatar: cachedProfile?.avatar || "",
             likedSongs: cachedLiked,
             customPlaylists: cachedPlaylists,
             updatedAt: new Date().toISOString(),
@@ -422,7 +421,7 @@ export function AudioProvider({ children }) {
                   saveLocalCustomPlaylists(firebaseUser.uid, []);
                 }
 
-                // Update Profile info: Preserve avatar if uploaded locally
+                // Update Profile info: Only use explicitly uploaded avatar
                 const emailName = firebaseUser.email ? firebaseUser.email.split("@")[0] : "Music Lover";
                 const resolvedName =
                   cloudData.name ||
@@ -430,7 +429,7 @@ export function AudioProvider({ children }) {
                   firebaseUser.displayName ||
                   emailName;
                 const resolvedAvatar =
-                  cloudData.avatar || cachedProfile?.avatar || firebaseUser.photoURL || "";
+                  cloudData.avatar || cachedProfile?.avatar || "";
                 const resolvedEmail =
                   cloudData.email || firebaseUser.email || cachedProfile?.email || "";
 
@@ -474,7 +473,7 @@ export function AudioProvider({ children }) {
                   uid: firebaseUser.uid,
                   name: initialName,
                   email: firebaseUser.email || "",
-                  avatar: localProf?.avatar || firebaseUser.photoURL || "",
+                  avatar: localProf?.avatar || "",
                   likedSongs: localLiked,
                   customPlaylists: localPlaylists,
                   createdAt: new Date().toISOString(),
@@ -641,7 +640,7 @@ export function AudioProvider({ children }) {
 
       const emailPrefix = user.email ? user.email.split("@")[0] : "Music Lover";
       const resolvedName = user.displayName || emailPrefix;
-      const resolvedAvatar = user.photoURL || "";
+      const cachedProfile = getLocalProfile(user.uid);
 
       const userRef = doc(db, "users", user.uid);
       const snap = await getDoc(userRef);
@@ -654,7 +653,7 @@ export function AudioProvider({ children }) {
           name: cloudData.name || resolvedName,
           email: user.email || cloudData.email || "",
           handle: `@${(cloudData.name || resolvedName).toLowerCase().replace(/[^a-z0-9]/g, "")}`,
-          avatar: cloudData.avatar || resolvedAvatar,
+          avatar: cloudData.avatar || cachedProfile?.avatar || "",
           plan: "Audix Free",
           playlistsCount: Array.isArray(cloudData.customPlaylists) ? cloudData.customPlaylists.length : 0,
           followingCount: 0,
@@ -676,7 +675,7 @@ export function AudioProvider({ children }) {
           name: resolvedName,
           email: user.email || "",
           handle: `@${resolvedName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
-          avatar: resolvedAvatar,
+          avatar: cachedProfile?.avatar || "",
           likedSongs: [],
           customPlaylists: [],
           plan: "Audix Free",
@@ -706,15 +705,15 @@ export function AudioProvider({ children }) {
     if (!uid) return;
     try {
       setUserProfile((prev) => {
-        const updated = { ...prev, avatar: base64Avatar };
+        const updated = { ...prev, avatar: base64Avatar || "" };
         saveLocalProfile(uid, updated);
         return updated;
       });
       const userRef = doc(db, "users", uid);
-      await setDoc(userRef, { avatar: base64Avatar }, { merge: true });
+      await setDoc(userRef, { avatar: base64Avatar || "" }, { merge: true });
       if (auth.currentUser) {
         try {
-          await updateProfile(auth.currentUser, { photoURL: base64Avatar });
+          await updateProfile(auth.currentUser, { photoURL: base64Avatar || "" });
         } catch (e) {}
       }
     } catch (err) {
@@ -722,6 +721,11 @@ export function AudioProvider({ children }) {
       throw err;
     }
   }, []);
+
+  // Remove user profile picture
+  const removeUserAvatar = useCallback(async () => {
+    await updateUserAvatar("");
+  }, [updateUserAvatar]);
 
   // Update user display name (synced to LocalStorage, Firestore & Auth)
   const updateUserName = useCallback(async (newName) => {
@@ -1377,6 +1381,7 @@ export function AudioProvider({ children }) {
       removeSongFromPlaylist,
       setUserProfile,
       updateUserAvatar,
+      removeUserAvatar,
       updateUserName,
       changeUserPassword,
       sendPasswordReset,
@@ -1446,6 +1451,7 @@ export function AudioProvider({ children }) {
       addSongToPlaylist,
       removeSongFromPlaylist,
       updateUserAvatar,
+      removeUserAvatar,
       updateUserName,
       changeUserPassword,
       sendPasswordReset,
