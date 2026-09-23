@@ -82,10 +82,24 @@ export function AudioProvider({ children }) {
   const [prevVolume, setPrevVolume] = useState(80);
   const [shuffle, setShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState("off"); // 'off' | 'all' | 'one'
-  const [activeQueue, setActiveQueue] = useState(songs);
+  const [userQueue, setUserQueue] = useState([]); // User manually added queue
+  const [contextQueue, setContextQueue] = useState(() => [defaultTrack]); // Active playlist/album context queue
+  const [contextName, setContextName] = useState("Audix Hits");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLanguage, setActiveLanguage] = useState("All");
   const [audioError, setAudioError] = useState(null);
+
+  // References to keep event listeners fresh without recreation
+  const playNextRef = useRef(null);
+  const repeatModeRef = useRef(repeatMode);
+  useEffect(() => {
+    repeatModeRef.current = repeatMode;
+  }, [repeatMode]);
+
+  // Combined activeQueue for components reading queue
+  const activeQueue = useMemo(() => {
+    return [currentTrack, ...(userQueue || [])].filter(Boolean);
+  }, [currentTrack, userQueue]);
 
   // Initialize and attach native HTML5 Audio element listeners
   useEffect(() => {
@@ -125,11 +139,11 @@ export function AudioProvider({ children }) {
 
     // Song ended listener: Auto-play next or repeat
     const handleEnded = () => {
-      if (repeatMode === "one") {
+      if (repeatModeRef.current === "one") {
         audio.currentTime = 0;
         audio.play().catch((err) => console.error("Repeat play error:", err));
-      } else {
-        playNext();
+      } else if (playNextRef.current) {
+        playNextRef.current();
       }
     };
 
@@ -164,7 +178,7 @@ export function AudioProvider({ children }) {
       audio.pause();
       audio.src = "";
     };
-  }, [repeatMode]);
+  }, []);
 
   // Local Storage Helpers for instant 0ms persistence and offline reliability
   const STORAGE_KEYS = {
@@ -749,10 +763,10 @@ export function AudioProvider({ children }) {
   }, []);
 
   /**
-   * Core Playback Action: Play a specific track with optional custom queue
+   * Core Playback Action: Play a specific track with optional custom queue & source context
    */
   const playTrack = useCallback(
-    async (rawTrack, queue = null) => {
+    async (rawTrack, queue = null, sourceTitle = null, updateContext = true) => {
       if (!rawTrack) return;
       let track = formatSaavnSong(rawTrack);
       const audio = audioRef.current;
@@ -762,9 +776,23 @@ export function AudioProvider({ children }) {
       setProgress(0);
       setCurrentTime(0);
 
+      // 1. If explicit queue list is provided (e.g. from Playlist, Album, Liked Songs, Search)
       if (queue && Array.isArray(queue) && queue.length > 0) {
         const formattedQueue = queue.map(formatSaavnSong).filter(Boolean);
-        setActiveQueue(formattedQueue);
+        setContextQueue(formattedQueue);
+        if (sourceTitle) {
+          setContextName(sourceTitle);
+        }
+      } else if (updateContext) {
+        // If single song is played, ensure it is part of contextQueue without wiping everything
+        setContextQueue((prev) => {
+          const exists = (prev || []).some((t) => String(t.id) === String(track.id));
+          if (exists) return prev;
+          return [track, ...(prev || [])];
+        });
+        if (sourceTitle) {
+          setContextName(sourceTitle);
+        }
       }
 
       let streamUrl = track.audioUrl || track.streamUrl || track.url || "";
@@ -823,6 +851,55 @@ export function AudioProvider({ children }) {
     },
     [],
   );
+
+  /**
+   * Add a song to the user's manual queue (Next In Queue)
+   */
+  const addToQueue = useCallback((rawTrack) => {
+    if (!rawTrack) return false;
+    const track = formatSaavnSong(rawTrack);
+    setUserQueue((prev) => [...prev, track]);
+    return true;
+  }, []);
+
+  /**
+   * Add a song to play immediately next (Top of manual queue)
+   */
+  const playNextInQueue = useCallback((rawTrack) => {
+    if (!rawTrack) return false;
+    const track = formatSaavnSong(rawTrack);
+    setUserQueue((prev) => [track, ...prev]);
+    return true;
+  }, []);
+
+  /**
+   * Remove a specific song from the user manual queue by index
+   */
+  const removeFromUserQueue = useCallback((index) => {
+    setUserQueue((prev) => prev.filter((_, idx) => idx !== index));
+  }, []);
+
+  /**
+   * Remove a song from the active context queue
+   */
+  const removeFromContextQueue = useCallback((trackId) => {
+    setContextQueue((prev) => prev.filter((t) => String(t.id) !== String(trackId)));
+  }, []);
+
+  /**
+   * Clear all user-added queue songs
+   */
+  const clearUserQueue = useCallback(() => {
+    setUserQueue([]);
+  }, []);
+
+  /**
+   * Clear all queues (resets to current track only)
+   */
+  const clearQueue = useCallback(() => {
+    setUserQueue([]);
+    setContextQueue(currentTrack ? [currentTrack] : []);
+  }, [currentTrack]);
 
   /**
    * Toggle Play / Pause
@@ -939,23 +1016,40 @@ export function AudioProvider({ children }) {
     });
   }, []);
 
-  const currentIndex = useMemo(() => {
-    return activeQueue.findIndex((t) => String(t.id) === String(currentTrack.id));
-  }, [activeQueue, currentTrack]);
-
   /**
-   * Next Song
+   * Next Song: Prioritizes userQueue first, then continues with contextQueue
    */
   const playNext = useCallback(() => {
-    if (activeQueue.length === 0) return;
-    if (shuffle) {
-      const randomIndex = Math.floor(Math.random() * activeQueue.length);
-      playTrack(activeQueue[randomIndex]);
-    } else {
-      const nextIndex = (currentIndex + 1) % activeQueue.length;
-      playTrack(activeQueue[nextIndex]);
+    // 1. If user has manually queued songs in userQueue, play the first one and shift
+    if (userQueue && userQueue.length > 0) {
+      const nextUserSong = userQueue[0];
+      setUserQueue((prev) => prev.slice(1));
+      playTrack(nextUserSong, null, null, false);
+      return;
     }
-  }, [activeQueue, shuffle, currentIndex, playTrack]);
+
+    // 2. Play next song in active playlist / context queue
+    if (contextQueue && contextQueue.length > 0) {
+      if (shuffle) {
+        const pool = contextQueue.filter((t) => String(t.id) !== String(currentTrack.id));
+        const finalPool = pool.length > 0 ? pool : contextQueue;
+        const randomIndex = Math.floor(Math.random() * finalPool.length);
+        playTrack(finalPool[randomIndex], null, null, false);
+      } else {
+        const curIdx = contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id));
+        if (curIdx >= 0 && curIdx + 1 < contextQueue.length) {
+          playTrack(contextQueue[curIdx + 1], null, null, false);
+        } else if (repeatMode === "all" || curIdx === -1) {
+          playTrack(contextQueue[0], null, null, false);
+        }
+      }
+    }
+  }, [userQueue, contextQueue, currentTrack, shuffle, repeatMode, playTrack]);
+
+  // Keep playNextRef synced for ended audio listener
+  useEffect(() => {
+    playNextRef.current = playNext;
+  }, [playNext]);
 
   /**
    * Previous Song
@@ -966,11 +1060,18 @@ export function AudioProvider({ children }) {
       audio.currentTime = 0;
       return;
     }
-    if (activeQueue.length === 0) return;
-    const prevIndex =
-      currentIndex <= 0 ? activeQueue.length - 1 : currentIndex - 1;
-    playTrack(activeQueue[prevIndex]);
-  }, [activeQueue, currentIndex, playTrack]);
+
+    if (contextQueue && contextQueue.length > 0) {
+      const curIdx = contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id));
+      if (curIdx > 0) {
+        playTrack(contextQueue[curIdx - 1], null, null, false);
+      } else if (repeatMode === "all") {
+        playTrack(contextQueue[contextQueue.length - 1], null, null, false);
+      } else if (contextQueue.length > 0) {
+        playTrack(contextQueue[0], null, null, false);
+      }
+    }
+  }, [contextQueue, currentTrack, repeatMode, playTrack]);
 
   /**
    * Like / Favorite toggling - Supports passing track object, string ID, or currentTrack
@@ -1206,7 +1307,7 @@ export function AudioProvider({ children }) {
 
   const value = useMemo(
     () => ({
-      // Audio State
+      // Audio & Queue State
       currentTrack,
       isPlaying,
       isLoading,
@@ -1218,6 +1319,9 @@ export function AudioProvider({ children }) {
       shuffle,
       repeatMode,
       activeQueue,
+      userQueue,
+      contextQueue,
+      contextName,
       audioError,
 
       // Authentication State
@@ -1246,7 +1350,7 @@ export function AudioProvider({ children }) {
       searchQuery,
       activeLanguage,
 
-      // Playback Controls
+      // Playback & Queue Controls
       playTrack,
       togglePlay,
       playNext,
@@ -1259,6 +1363,15 @@ export function AudioProvider({ children }) {
       toggleRepeat,
       toggleLike,
       isLiked,
+      addToQueue,
+      playNextInQueue,
+      removeFromUserQueue,
+      removeFromContextQueue,
+      clearUserQueue,
+      clearQueue,
+      setUserQueue,
+      setContextQueue,
+      setContextName,
       createCustomPlaylist,
       addSongToPlaylist,
       removeSongFromPlaylist,
@@ -1269,7 +1382,6 @@ export function AudioProvider({ children }) {
       sendPasswordReset,
       setSearchQuery,
       setActiveLanguage,
-      setActiveQueue,
 
       // API Search & Resolver Methods
       fetchSearchSongs,
@@ -1287,6 +1399,9 @@ export function AudioProvider({ children }) {
       shuffle,
       repeatMode,
       activeQueue,
+      userQueue,
+      contextQueue,
+      contextName,
       audioError,
       isAuthenticated,
       currentUser,
@@ -1321,6 +1436,12 @@ export function AudioProvider({ children }) {
       toggleRepeat,
       toggleLike,
       isLiked,
+      addToQueue,
+      playNextInQueue,
+      removeFromUserQueue,
+      removeFromContextQueue,
+      clearUserQueue,
+      clearQueue,
       createCustomPlaylist,
       addSongToPlaylist,
       removeSongFromPlaylist,

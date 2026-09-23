@@ -14,20 +14,23 @@ import {
   Plus,
   Repeat,
   Repeat1,
+  Search,
   Shuffle,
   SkipBack,
   SkipForward,
   Sparkles,
+  Trash2,
   Volume1,
   Volume2,
   VolumeX,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { usePlayer } from "@/context/PlayerContext";
 import { useTheme } from "@/context/ThemeContext";
 import { ScrollingWaveform } from "@/components/ui/waveform";
+import { songs } from "@/data/musicData";
 
 function formatSeconds(sec) {
   if (!sec || isNaN(sec) || sec < 0) return "0:00";
@@ -50,6 +53,9 @@ export default function MusicPlayer() {
     shuffle,
     repeatMode,
     activeQueue,
+    userQueue = [],
+    contextQueue = [],
+    contextName = "Audix Hits",
     isCreatePlaylistOpen,
     togglePlay,
     playNext,
@@ -62,6 +68,11 @@ export default function MusicPlayer() {
     setShuffle,
     toggleRepeat,
     playTrack,
+    addToQueue,
+    playNextInQueue,
+    removeFromUserQueue,
+    clearUserQueue,
+    fetchSearchSongs,
     customPlaylists = [],
     addSongToPlaylist,
     removeSongFromPlaylist,
@@ -76,6 +87,52 @@ export default function MusicPlayer() {
   const [showSongInfoModal, setShowSongInfoModal] = useState(false);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [useWaveformMode, setUseWaveformMode] = useState(true);
+
+  // Queue Inline Search States
+  const [queueSearchText, setQueueSearchText] = useState("");
+  const [queueSearchResults, setQueueSearchResults] = useState([]);
+
+  const handleQueueSearch = useCallback(
+    async (q) => {
+      setQueueSearchText(q);
+      if (!q.trim()) {
+        setQueueSearchResults([]);
+        return;
+      }
+      const lower = q.toLowerCase().trim();
+      const localMatches = (songs || []).filter(
+        (s) =>
+          s.title.toLowerCase().includes(lower) ||
+          s.artist.toLowerCase().includes(lower) ||
+          (s.album && s.album.toLowerCase().includes(lower)),
+      ).slice(0, 5);
+
+      setQueueSearchResults(localMatches);
+
+      if (localMatches.length < 3 && typeof fetchSearchSongs === "function") {
+        try {
+          const apiMatches = await fetchSearchSongs(q, 1, 5);
+          if (apiMatches && apiMatches.length > 0) {
+            setQueueSearchResults(apiMatches.slice(0, 6));
+          }
+        } catch (e) {
+          console.warn("Queue search fallback error:", e);
+        }
+      }
+    },
+    [fetchSearchSongs],
+  );
+
+  const upcomingFromContext = useMemo(() => {
+    if (!contextQueue || contextQueue.length === 0) return [];
+    const curIdx = contextQueue.findIndex((t) => String(t.id) === String(currentTrack?.id));
+    if (curIdx === -1) {
+      return contextQueue.filter((t) => String(t.id) !== String(currentTrack?.id));
+    }
+    const after = contextQueue.slice(curIdx + 1);
+    const before = contextQueue.slice(0, curIdx);
+    return [...after, ...before];
+  }, [contextQueue, currentTrack]);
 
   if (isCreatePlaylistOpen) return null;
 
@@ -1109,76 +1166,249 @@ export default function MusicPlayer() {
       )}
 
       {/* ========================================================================= */}
-      {/* 4. QUEUE MODAL (Shared)                                                   */}
+      {/* 4. QUEUE MODAL (Spotify-Style Pro Queue Manager)                          */}
       {/* ========================================================================= */}
       {showQueueModal && (
         <AnimatePresence>
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 15, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 15, scale: 0.96 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={`
-              fixed bottom-[104px] right-4 z-[9999] w-80 max-h-[420px] overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl
+              fixed bottom-[100px] right-3 sm:right-6 z-[9999] w-[94vw] sm:w-[380px] md:w-[430px] max-h-[520px] overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl flex flex-col
               ${
                 theme === "dark"
                   ? "bg-[#181818]/95 border-white/10 text-white"
-                  : "bg-[#faf8f5]/95 border-stone-300/80 text-stone-900"
+                  : "bg-[#faf8f5]/95 border-stone-300 text-stone-900 shadow-stone-900/10"
               }
             `}
           >
-            <div className="flex items-center justify-between border-b p-3.5 border-stone-300/60 dark:border-white/10">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-red-500">
-                Playing Queue ({activeQueue.length})
-              </h3>
-              <button
-                onClick={() => setShowQueueModal(false)}
-                className="opacity-70 hover:opacity-100 cursor-pointer"
-              >
-                <X size={16} />
-              </button>
+            {/* Header */}
+            <div className="flex items-center justify-between border-b px-4 py-3 border-stone-300/60 dark:border-white/10 shrink-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold leading-tight">
+                    Playing Queue
+                  </h3>
+                  <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10.5px] font-bold text-red-500">
+                    {1 + userQueue.length + (contextQueue?.length ? Math.max(0, contextQueue.length - 1) : 0)} songs
+                  </span>
+                </div>
+                <p className="text-[11px] opacity-60 truncate mt-0.5">
+                  Source: <span className="font-semibold">{contextName || "Audix Hits"}</span>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {userQueue.length > 0 && (
+                  <button
+                    onClick={clearUserQueue}
+                    className="text-[11px] font-bold text-red-500 hover:underline px-2 py-1 rounded cursor-pointer"
+                    title="Clear manually added queue songs"
+                  >
+                    Clear Queue
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowQueueModal(false)}
+                  className="rounded-full p-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 dark:hover:bg-white/10 transition cursor-pointer"
+                  title="Close Queue"
+                >
+                  <X size={17} />
+                </button>
+              </div>
             </div>
 
-            <div className="spotify-scrollbar max-h-[350px] overflow-y-auto p-2 space-y-1">
-              {activeQueue.map((t, idx) => {
-                const isCurrent = t.id === currentTrack.id;
-                return (
+            {/* Quick Inline Search & Add to Queue Bar */}
+            <div className="px-3 pt-2.5 pb-1 shrink-0">
+              <div className="relative flex items-center">
+                <Search size={14} className="absolute left-2.5 opacity-50" />
+                <input
+                  type="text"
+                  placeholder="Search & add songs to queue..."
+                  value={queueSearchText}
+                  onChange={(e) => handleQueueSearch(e.target.value)}
+                  className={`
+                    w-full rounded-xl pl-8 pr-8 py-1.5 text-xs outline-none transition border
+                    ${
+                      theme === "dark"
+                        ? "bg-white/[0.05] border-white/10 text-white placeholder-white/40 focus:border-red-500"
+                        : "bg-black/[0.04] border-stone-300 text-stone-900 placeholder-stone-400 focus:border-red-500"
+                    }
+                  `}
+                />
+                {queueSearchText && (
                   <button
-                    key={t.id + idx}
                     onClick={() => {
-                      playTrack(t);
+                      setQueueSearchText("");
+                      setQueueSearchResults([]);
                     }}
-                    className={`
-                      flex w-full items-center gap-2.5 rounded-lg p-2 text-left transition cursor-pointer
-                      ${
-                        isCurrent
-                          ? "bg-red-500/15 text-red-500 font-bold"
-                          : theme === "dark"
-                          ? "hover:bg-white/5"
-                          : "hover:bg-stone-100"
-                      }
-                    `}
+                    className="absolute right-2.5 opacity-60 hover:opacity-100 cursor-pointer text-xs"
                   >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Instant Search Results Dropdown */}
+              {queueSearchResults.length > 0 && (
+                <div className={`mt-1.5 rounded-xl border p-1 space-y-1 max-h-36 overflow-y-auto spotify-scrollbar shadow-lg ${
+                  theme === "dark" ? "bg-[#222] border-white/10" : "bg-white border-stone-200"
+                }`}>
+                  {queueSearchResults.map((song) => (
+                    <div
+                      key={song.id}
+                      className="flex items-center justify-between p-1.5 rounded-lg hover:bg-red-500/10 transition text-xs"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+                        <img src={song.image} alt={song.title} className="h-7 w-7 rounded object-cover shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold truncate text-[11.5px]">{song.title}</p>
+                          <p className="text-[10px] opacity-60 truncate">{song.artist}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            playNextInQueue(song);
+                            setQueueSearchText("");
+                            setQueueSearchResults([]);
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold text-red-500 hover:bg-red-500/20 transition cursor-pointer"
+                          title="Play next"
+                        >
+                          Play Next
+                        </button>
+                        <button
+                          onClick={() => {
+                            addToQueue(song);
+                            setQueueSearchText("");
+                            setQueueSearchResults([]);
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-500 text-white hover:bg-red-600 transition cursor-pointer"
+                          title="Add to end of queue"
+                        >
+                          + Queue
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Scrollable Queue Content */}
+            <div className="spotify-scrollbar flex-1 overflow-y-auto p-3 space-y-3.5 max-h-[380px]">
+              {/* NOW PLAYING SECTION */}
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-wider text-red-500 mb-1.5 flex items-center gap-1.5">
+                  <span className={`h-1.5 w-1.5 rounded-full bg-red-500 ${isPlaying ? "animate-pulse" : ""}`} />
+                  Now Playing
+                </p>
+                <div
+                  className={`
+                    flex items-center justify-between p-2.5 rounded-xl border
+                    ${
+                      theme === "dark"
+                        ? "bg-red-500/10 border-red-500/20 text-white"
+                        : "bg-red-50 border-red-200 text-stone-900"
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
                     <img
-                      src={t.image}
-                      alt={t.title}
-                      className="h-9 w-9 rounded object-cover"
+                      src={currentTrack.image}
+                      alt={currentTrack.title}
+                      className="h-10 w-10 rounded-lg object-cover shadow-sm shrink-0"
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold">
-                        {t.title}
-                      </p>
-                      <p className="truncate text-[10px] text-[#a7a7a7]">
-                        {t.artist}
-                      </p>
+                      <p className="truncate text-xs font-bold text-red-500">{currentTrack.title}</p>
+                      <p className="truncate text-[10.5px] opacity-70">{currentTrack.artist}</p>
                     </div>
-                    {isCurrent && (
-                      <span className="text-[10px] font-bold text-red-500">
-                        NOW
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[10.5px] font-bold text-red-500 tabular-nums">
+                      {formatSeconds(currentTime)} / {currentTrack.duration}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* USER QUEUED SONGS (NEXT IN QUEUE) */}
+              {userQueue.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-amber-500 dark:text-amber-400">
+                      Next in Queue ({userQueue.length})
+                    </p>
+                    <button
+                      onClick={clearUserQueue}
+                      className="text-[10px] font-bold text-red-400 hover:underline cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                  </div>
+
+                  <div className="space-y-1">
+                    {userQueue.map((song, idx) => (
+                      <div
+                        key={`user-q-${song.id}-${idx}`}
+                        className={`
+                          group flex w-full items-center justify-between p-2 rounded-xl text-left transition
+                          ${
+                            theme === "dark"
+                              ? "hover:bg-white/5 bg-white/[0.02]"
+                              : "hover:bg-stone-200/60 bg-stone-100/60"
+                          }
+                        `}
+                      >
+                        <button
+                          onClick={() => {
+                            removeFromUserQueue(idx);
+                            playTrack(song);
+                          }}
+                          className="flex items-center gap-2.5 min-w-0 flex-1 text-left cursor-pointer"
+                        >
+                          <span className="text-[11px] font-bold text-amber-500 tabular-nums w-4 text-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <img
+                            src={song.image}
+                            alt={song.title}
+                            className="h-8 w-8 rounded-lg object-cover shrink-0 shadow-sm"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold">{song.title}</p>
+                            <p className="truncate text-[10px] opacity-60">{song.artist}</p>
+                          </div>
+                        </button>
+
+                        <div className="flex items-center gap-1 shrink-0 ml-2">
+                          <button
+                            onClick={() => removeFromUserQueue(idx)}
+                            className="p-1 rounded-full opacity-60 hover:opacity-100 hover:text-red-500 transition cursor-pointer"
+                            title="Remove from queue"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="py-7 px-4 text-center border rounded-2xl border-black/5 dark:border-white/5 bg-black/[0.02] dark:bg-white/[0.02]">
+                  <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+                    <ListMusic size={18} />
+                  </div>
+                  <p className="text-xs font-bold mb-0.5">Queue is empty</p>
+                  <p className="text-[11px] opacity-60 max-w-[220px] mx-auto leading-relaxed">
+                    Search above or click &quot;...&quot; on any track to add songs to your queue.
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </AnimatePresence>

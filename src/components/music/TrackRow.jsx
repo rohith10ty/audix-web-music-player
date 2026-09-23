@@ -2,11 +2,14 @@ import {
   Check,
   Clock3,
   Heart,
+  ListMusic,
   ListPlus,
   MoreHorizontal,
   Pause,
   Play,
   Plus,
+  Radio,
+  Sparkles,
   Trash2,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -21,6 +24,8 @@ export default function TrackRow({
   showAlbum = true,
   isCustomPlaylist = false,
   playlistId = null,
+  playlistTracks = null,
+  playlistTitle = null,
 }) {
   const { theme } = useTheme();
   const navigate = useNavigate();
@@ -31,6 +36,8 @@ export default function TrackRow({
     togglePlay,
     toggleLike,
     isLiked,
+    addToQueue,
+    playNextInQueue,
     customPlaylists = [],
     addSongToPlaylist,
     removeSongFromPlaylist,
@@ -41,6 +48,7 @@ export default function TrackRow({
 
   const [showOptions, setShowOptions] = useState(false);
   const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
+  const [queueToast, setQueueToast] = useState("");
 
   const active = currentTrack.id === track.id;
   const liked = isLiked(track.id);
@@ -49,8 +57,24 @@ export default function TrackRow({
     if (active) {
       togglePlay();
     } else {
-      playTrack(track);
+      playTrack(track, playlistTracks || null, playlistTitle || null);
     }
+  };
+
+  const handleAddToQueue = (e) => {
+    e?.stopPropagation();
+    addToQueue(track);
+    setShowOptions(false);
+    setQueueToast("Added to Queue");
+    setTimeout(() => setQueueToast(""), 2000);
+  };
+
+  const handlePlayNext = (e) => {
+    e?.stopPropagation();
+    playNextInQueue(track);
+    setShowOptions(false);
+    setQueueToast("Playing Next");
+    setTimeout(() => setQueueToast(""), 2000);
   };
 
   const handleTogglePlaylistSong = (pId, isInPlaylist) => {
@@ -271,6 +295,12 @@ export default function TrackRow({
             <MoreHorizontal size={17} />
           </button>
 
+          {queueToast && (
+            <span className="absolute right-8 top-1 z-50 rounded-full bg-red-500 text-white text-[10.5px] font-bold px-2.5 py-0.5 shadow-lg whitespace-nowrap animate-in fade-in zoom-in-95">
+              {queueToast}
+            </span>
+          )}
+
           {showOptions && (
             <div
               onClick={(e) => e.stopPropagation()}
@@ -288,28 +318,44 @@ export default function TrackRow({
                   toggleLike(track);
                   setShowOptions(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
+                className="flex w-full items-center gap-2.5 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
               >
                 <Heart size={14} fill={liked ? "currentColor" : "none"} className={liked ? "text-red-500" : ""} />
-                {liked ? "Remove from Liked" : "Add to Liked Songs"}
+                {liked ? "Remove from Liked" : "Save to Liked Songs"}
               </button>
 
               <button
                 onClick={() => {
-                  playTrack(track);
+                  playTrack(track, playlistTracks || null, playlistTitle || null);
                   setShowOptions(false);
                 }}
-                className="flex w-full items-center gap-2 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
+                className="flex w-full items-center gap-2.5 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
               >
                 <Play size={14} />
-                Play Now
+                <span>Play Now</span>
+              </button>
+
+              <button
+                onClick={handlePlayNext}
+                className="flex w-full items-center gap-2.5 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
+              >
+                <ListMusic size={14} className="text-red-400" />
+                <span>Play Next in Queue</span>
+              </button>
+
+              <button
+                onClick={handleAddToQueue}
+                className="flex w-full items-center gap-2.5 rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer"
+              >
+                <Plus size={14} className="text-red-400" />
+                <span>Add to Queue</span>
               </button>
 
               <button
                 onClick={() => setShowPlaylistSubmenu((v) => !v)}
                 className="flex w-full items-center justify-between rounded-md p-2 hover:bg-red-500/15 text-left font-medium cursor-pointer border-t border-white/5 dark:border-white/5 mt-0.5"
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
                   <ListPlus size={14} className="text-red-400" />
                   <span>Add to Playlist</span>
                 </div>

@@ -147,10 +147,12 @@ export default function Artist() {
           <div className="space-y-1">
             {artistSongs.map((track, index) => (
               <TrackRow
-                key={track.id}
+                key={track.id + index}
                 track={track}
                 index={index}
                 showAlbum={true}
+                playlistTracks={artistSongs}
+                playlistTitle={`Artist: ${artist.name}`}
               />
             ))}
           </div>

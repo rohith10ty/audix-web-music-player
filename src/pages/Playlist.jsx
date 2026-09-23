@@ -26,7 +26,6 @@ export default function Playlist() {
 
   const [showShareToast, setShowShareToast] = useState(false);
   const [searchAddQuery, setSearchAddQuery] = useState("");
-  const [selectedAddLang, setSelectedAddLang] = useState("All");
 
   const playlist = useMemo(() => {
     const found = allPlaylists.find((item) => String(item.id) === String(id));
@@ -69,6 +68,63 @@ export default function Playlist() {
     };
   }, [allPlaylists, id]);
 
+  // Smart detection of the primary language for this playlist
+  const detectedPlaylistLanguage = useMemo(() => {
+    if (!playlist) return "All";
+    const titleLower = (playlist.title || "").toLowerCase();
+    const descLower = (playlist.description || "").toLowerCase();
+    const combined = `${titleLower} ${descLower}`;
+
+    const knownLanguages = [
+      "Telugu",
+      "Tamil",
+      "Hindi",
+      "English",
+      "Malayalam",
+      "Kannada",
+      "Punjabi",
+    ];
+
+    // 1. Check title/description explicitly
+    for (const lang of knownLanguages) {
+      if (combined.includes(lang.toLowerCase())) {
+        return lang;
+      }
+    }
+
+    // 2. Check existing songs in the playlist
+    if (playlist.tracks && playlist.tracks.length > 0) {
+      const counts = {};
+      for (const t of playlist.tracks) {
+        if (t.language) {
+          counts[t.language] = (counts[t.language] || 0) + 1;
+        }
+      }
+      let topLang = null;
+      let maxCount = 0;
+      for (const [lang, cnt] of Object.entries(counts)) {
+        if (cnt > maxCount) {
+          maxCount = cnt;
+          topLang = lang;
+        }
+      }
+      if (topLang) return topLang;
+    }
+
+    return "All";
+  }, [playlist]);
+
+  const [selectedAddLang, setSelectedAddLang] = useState(() => detectedPlaylistLanguage);
+
+  // Auto-sync selected language pill whenever playlist language changes
+  useEffect(() => {
+    if (detectedPlaylistLanguage && detectedPlaylistLanguage !== "All") {
+      setSelectedAddLang(detectedPlaylistLanguage);
+    } else {
+      setSelectedAddLang("All");
+    }
+  }, [detectedPlaylistLanguage, playlist.id]);
+
   const isCustom = Boolean(
     playlist.isCustom || (typeof playlist.id === "string" && playlist.id.startsWith("custom-")),
   );
@@ -93,9 +149,17 @@ export default function Playlist() {
     addSongToPlaylist(playlist.id, song);
   };
 
-  // Filter songs for the "Add Songs" section
+  // Filter songs for the "Add Songs" section with smart recommendations & exclusions
   const availableSongsToAdd = useMemo(() => {
-    let list = songs;
+    const existingIds = new Set((playlist.tracks || []).map((t) => String(t.id)));
+    const existingArtists = new Set(
+      (playlist.tracks || []).flatMap((t) =>
+        (t.artist || "").toLowerCase().split(/[,&]/).map((a) => a.trim()),
+      ).filter(Boolean),
+    );
+
+    // Exclude songs already added to this playlist
+    let list = songs.filter((s) => !existingIds.has(String(s.id)));
 
     if (selectedAddLang !== "All") {
       list = list.filter((s) => s.language === selectedAddLang);
@@ -107,12 +171,28 @@ export default function Playlist() {
         (s) =>
           s.title.toLowerCase().includes(q) ||
           s.artist.toLowerCase().includes(q) ||
-          (s.album && s.album.toLowerCase().includes(q)),
+          (s.album && s.album.toLowerCase().includes(q)) ||
+          (s.language && s.language.toLowerCase().includes(q)),
       );
+    } else {
+      // Smart recommendation ordering: prioritize matching language and artists in this playlist
+      list = [...list].sort((a, b) => {
+        const aMatchesLang = detectedPlaylistLanguage !== "All" && a.language === detectedPlaylistLanguage;
+        const bMatchesLang = detectedPlaylistLanguage !== "All" && b.language === detectedPlaylistLanguage;
+        if (aMatchesLang && !bMatchesLang) return -1;
+        if (!aMatchesLang && bMatchesLang) return 1;
+
+        const aMatchesArtist = existingArtists.has((a.artist || "").toLowerCase());
+        const bMatchesArtist = existingArtists.has((b.artist || "").toLowerCase());
+        if (aMatchesArtist && !bMatchesArtist) return -1;
+        if (!aMatchesArtist && bMatchesArtist) return 1;
+
+        return 0;
+      });
     }
 
-    return list.slice(0, 12);
-  }, [searchAddQuery, selectedAddLang]);
+    return list.slice(0, 16);
+  }, [searchAddQuery, selectedAddLang, playlist.tracks, detectedPlaylistLanguage]);
 
   return (
     <main
@@ -264,6 +344,8 @@ export default function Playlist() {
                 index={index}
                 isCustomPlaylist={isCustom}
                 playlistId={playlist.id}
+                playlistTracks={playlist.tracks}
+                playlistTitle={playlist.title}
               />
             ))}
 

@@ -248,7 +248,13 @@ export default function Search() {
 
                 <div className="space-y-1">
                   {songResults.map((track, index) => (
-                    <TrackRow key={track.id} track={track} index={index} />
+                    <TrackRow
+                      key={track.id + index}
+                      track={track}
+                      index={index}
+                      playlistTracks={songResults}
+                      playlistTitle={normalized ? `Search: "${query}"` : `${selectedLanguage} Songs`}
+                    />
                   ))}
                 </div>
               </section>
