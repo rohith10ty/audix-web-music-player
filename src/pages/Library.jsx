@@ -18,6 +18,7 @@ import { usePlayer } from "@/context/PlayerContext";
 import { useTheme } from "@/context/ThemeContext";
 import { artists, playlists } from "@/data/musicData";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
+import Footer from "@/components/common/Footer";
 
 const FILTER_TABS = ["All", "Playlists", "Liked", "Artists", "Featured"];
 
@@ -494,6 +495,8 @@ export default function Library() {
             </div>
           </div>
         )}
+
+        <Footer />
       </div>
     </main>
   );

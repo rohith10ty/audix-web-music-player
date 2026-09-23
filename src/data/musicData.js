@@ -6771,39 +6771,68 @@ export const homeSections = [
 
 export const searchCategories = [
   {
-    "id": "all",
-    "name": "All Songs",
-    "color": "from-purple-700 to-indigo-900"
+    id: "telugu",
+    title: "Telugu Hits",
+    name: "Telugu Hits",
+    filter: "Telugu",
+    image: "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
+    color: "from-amber-600 to-orange-800"
   },
   {
-    "id": "telugu",
-    "name": "Telugu",
-    "color": "from-amber-600 to-orange-800"
+    id: "english",
+    title: "Global English Hits",
+    name: "Global English Hits",
+    filter: "English",
+    image: "https://c.saavncdn.com/396/The-Highlights-English-2021-20240207045714-500x500.jpg",
+    color: "from-blue-600 to-cyan-800"
   },
   {
-    "id": "english",
-    "name": "English Pop & Hits",
-    "color": "from-blue-600 to-cyan-800"
+    id: "tamil",
+    title: "Tamil Beats",
+    name: "Tamil Beats",
+    filter: "Tamil",
+    image: "https://c.saavncdn.com/510/Beast-Tamil-2022-20220504184736-500x500.jpg",
+    color: "from-rose-600 to-red-800"
   },
   {
-    "id": "tamil",
-    "name": "Tamil",
-    "color": "from-rose-600 to-red-800"
+    id: "hindi",
+    title: "Bollywood Hindi",
+    name: "Bollywood Hindi",
+    filter: "Hindi",
+    image: "https://c.saavncdn.com/871/Brahmastra-Original-Motion-Picture-Soundtrack-Hindi-2022-20221006155213-500x500.jpg",
+    color: "from-emerald-600 to-teal-800"
   },
   {
-    "id": "hindi",
-    "name": "Bollywood Hindi",
-    "color": "from-emerald-600 to-teal-800"
+    id: "malayalam",
+    title: "Malayalam Vibe",
+    name: "Malayalam Vibe",
+    filter: "Malayalam",
+    image: "https://c.saavncdn.com/555/Hridayam-Side-A-Malayalam-2022-20230803211029-500x500.jpg",
+    color: "from-fuchsia-600 to-pink-800"
   },
   {
-    "id": "malayalam",
-    "name": "Malayalam",
-    "color": "from-fuchsia-600 to-pink-800"
+    id: "kannada",
+    title: "Kannada Sandalwood",
+    name: "Kannada Sandalwood",
+    filter: "Kannada",
+    image: "https://c.saavncdn.com/161/Vikrant-Rona-Kannada-Kannada-2022-20250818121332-500x500.jpg",
+    color: "from-yellow-600 to-amber-800"
   },
   {
-    "id": "kannada",
-    "name": "Kannada",
-    "color": "from-yellow-600 to-amber-800"
+    id: "party",
+    title: "Party & Dance",
+    name: "Party & Dance",
+    filter: "Party",
+    image: "https://c.saavncdn.com/276/Maari-2-Tamil-2018-20260203193952-500x500.jpg",
+    color: "from-purple-600 to-indigo-900"
+  },
+  {
+    id: "romance",
+    title: "Melody & Romance",
+    name: "Melody & Romance",
+    filter: "Melody",
+    image: "https://c.saavncdn.com/237/Geetha-Govindam-Telugu-2018-20180921-500x500.jpg",
+    color: "from-pink-600 to-rose-900"
   }
 ];
 

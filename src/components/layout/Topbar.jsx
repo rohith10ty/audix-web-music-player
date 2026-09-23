@@ -76,6 +76,14 @@ export default function Topbar() {
 
   const isSearchPage = location.pathname === "/search";
 
+  // Sync with URL when on /search page
+  useEffect(() => {
+    if (isSearchPage) {
+      const q = new URLSearchParams(location.search).get("q") || "";
+      setSearchTerm(q);
+    }
+  }, [isSearchPage, location.search]);
+
   // Live real-time search results for topbar dropdown
   const { results: apiLiveResults, isSearching } = useLiveSearch(
     searchTerm,
@@ -109,6 +117,26 @@ export default function Topbar() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const handleSearchChange = (val) => {
+    setSearchTerm(val);
+    if (isSearchPage) {
+      if (val.trim()) {
+        navigate(`/search?q=${encodeURIComponent(val)}`, { replace: true });
+      } else {
+        navigate(`/search`, { replace: true });
+      }
+    } else {
+      setShowSearchDropdown(true);
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    if (isSearchPage) {
+      navigate("/search", { replace: true });
+    }
+  };
 
   const handleSearchSubmit = (e) => {
     if (e.key === "Enter" && searchTerm.trim()) {
@@ -184,12 +212,9 @@ export default function Topbar() {
 
               <input
                 value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setShowSearchDropdown(true);
-                }}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 onFocus={() => {
-                  if (searchTerm.trim()) setShowSearchDropdown(true);
+                  if (!isSearchPage && searchTerm.trim()) setShowSearchDropdown(true);
                 }}
                 onKeyDown={handleSearchSubmit}
                 placeholder="What do you want to play? (Telugu, Tamil, Hindi, English...)"
@@ -205,8 +230,9 @@ export default function Topbar() {
 
               {searchTerm && (
                 <button
-                  onClick={() => setSearchTerm("")}
-                  className="mr-1 text-xs opacity-60 hover:opacity-100"
+                  onClick={handleClearSearch}
+                  className="mr-1 text-xs opacity-60 hover:opacity-100 cursor-pointer"
+                  title="Clear search"
                 >
                   <X size={16} />
                 </button>
@@ -226,8 +252,8 @@ export default function Topbar() {
               </div>
             </motion.div>
 
-            {/* Quick Live Search Results Dropdown */}
-            {showSearchDropdown && liveResults.length > 0 && (
+            {/* Quick Live Search Results Dropdown (only outside /search page) */}
+            {showSearchDropdown && !isSearchPage && liveResults.length > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}

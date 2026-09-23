@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { usePlayer } from "@/context/PlayerContext";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useLiveHome } from "@/hooks/useLiveMusic";
+import Footer from "@/components/common/Footer";
 
 const LANGUAGES = [
   "All",
@@ -483,6 +484,8 @@ export default function Home() {
             delay={index * 0.03}
           />
         ))}
+
+        <Footer />
       </div>
     </main>
   );

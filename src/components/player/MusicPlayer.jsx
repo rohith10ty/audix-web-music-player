@@ -1,14 +1,17 @@
 import {
   Activity,
+  Check,
   ChevronDown,
   Heart,
   Info,
   ListMusic,
+  ListPlus,
   Loader2,
   Maximize2,
   Minimize2,
   Pause,
   Play,
+  Plus,
   Repeat,
   Repeat1,
   Shuffle,
@@ -59,12 +62,19 @@ export default function MusicPlayer() {
     setShuffle,
     toggleRepeat,
     playTrack,
+    customPlaylists = [],
+    addSongToPlaylist,
+    removeSongFromPlaylist,
+    openCreatePlaylistModal,
+    isAuthenticated,
+    openAuthModal,
   } = usePlayer();
 
   const [showQueueModal, setShowQueueModal] = useState(false);
   const [showFullscreenModal, setShowFullscreenModal] = useState(false);
   const [showMobilePlayer, setShowMobilePlayer] = useState(false);
   const [showSongInfoModal, setShowSongInfoModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [useWaveformMode, setUseWaveformMode] = useState(true);
 
   if (isCreatePlaylistOpen) return null;
@@ -130,7 +140,7 @@ export default function MusicPlayer() {
         </div>
 
         {/* LEFT: Current Track Artwork & Meta + (Desktop Favorite Heart + Info Credits Button) */}
-        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3 lg:w-[320px] lg:flex-none">
+        <div className="relative z-10 flex min-w-0 flex-1 items-center gap-2 sm:gap-2.5 lg:w-[220px] xl:w-[270px] 2xl:w-[320px] lg:flex-none">
           <motion.img
             key={currentTrack.image}
             initial={{ opacity: 0, scale: 0.9 }}
@@ -143,7 +153,7 @@ export default function MusicPlayer() {
                 setShowSongInfoModal(true);
               }
             }}
-            className="h-11 w-11 rounded-lg object-cover shadow-sm lg:h-[54px] lg:w-[54px] lg:rounded-md shrink-0 lg:cursor-pointer hover:opacity-90"
+            className="h-11 w-11 rounded-lg object-cover shadow-sm lg:h-[48px] lg:w-[48px] xl:h-[54px] xl:w-[54px] lg:rounded-md shrink-0 lg:cursor-pointer hover:opacity-90"
             title="Click to view song info & credits"
           />
 
@@ -154,10 +164,10 @@ export default function MusicPlayer() {
                 setShowSongInfoModal(true);
               }
             }}
-            className="min-w-0 flex-1 lg:flex-initial lg:max-w-[170px] lg:cursor-pointer"
+            className="min-w-0 flex-1 lg:flex-initial lg:max-w-[110px] xl:max-w-[150px] 2xl:max-w-[180px] lg:cursor-pointer"
             title="Click to view song info & credits"
           >
-            <p className="truncate text-[13px] font-bold lg:text-[14px] hover:underline">
+            <p className="truncate text-[13px] font-bold lg:text-[13.5px] xl:text-[14px] hover:underline">
               {currentTrack.title}
             </p>
 
@@ -185,19 +195,19 @@ export default function MusicPlayer() {
               toggleLike(currentTrack);
             }}
             className={`
-              hidden lg:flex shrink-0 p-1.5 ml-1 transition cursor-pointer rounded-full
+              hidden lg:flex shrink-0 p-1.5 transition cursor-pointer rounded-full
               ${
                 liked
                   ? "text-red-500"
                   : theme === "dark"
                   ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
-                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
+                  : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
               }
             `}
             title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
           >
             <Heart
-              size={18}
+              size={17}
               fill={liked ? "currentColor" : "none"}
               className={liked ? "text-red-500" : ""}
             />
@@ -218,18 +228,36 @@ export default function MusicPlayer() {
                   ? "text-red-500 bg-red-500/10"
                   : theme === "dark"
                   ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
-                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-100"
+                  : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
               }
             `}
             title="Song Information & Credits"
           >
-            <Info size={18} />
+            <Info size={17} />
           </motion.button>
         </div>
 
         {/* CENTER: Desktop Audio Controls & Scrubbing Progress Bar */}
-        <div className="hidden min-w-0 flex-1 flex-col items-center lg:flex max-w-[680px] mx-auto">
-          <div className="mb-2 flex items-center gap-5">
+        <div className="hidden min-w-0 flex-1 flex-col items-center lg:flex max-w-[560px] xl:max-w-[700px] mx-auto px-1 sm:px-2">
+          <div className="mb-2 flex items-center gap-3.5 xl:gap-4.5">
+            {/* Add to Playlist Button (Beside Shuffle) */}
+            <motion.button
+              whileHover={{ scale: 1.15 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={() => setShowPlaylistModal(true)}
+              className={`
+                p-1.5 rounded-full transition cursor-pointer
+                ${
+                  theme === "dark"
+                    ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                    : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
+                }
+              `}
+              title="Add song to Playlist"
+            >
+              <ListPlus size={18} />
+            </motion.button>
+
             {/* Shuffle */}
             <motion.button
               whileHover={{ scale: 1.1 }}
@@ -242,12 +270,12 @@ export default function MusicPlayer() {
                     ? "text-red-500"
                     : theme === "dark"
                     ? "text-[#a7a7a7] hover:text-white"
-                    : "text-stone-400 hover:text-stone-900"
+                    : "text-stone-700 hover:text-stone-950"
                 }
               `}
               title={shuffle ? "Shuffle is ON" : "Shuffle is OFF"}
             >
-              <Shuffle size={17} />
+              <Shuffle size={16} />
             </motion.button>
 
             {/* Previous */}
@@ -260,12 +288,12 @@ export default function MusicPlayer() {
                 ${
                   theme === "dark"
                     ? "text-[#a7a7a7] hover:text-white"
-                    : "text-stone-500 hover:text-stone-900"
+                    : "text-stone-700 hover:text-stone-950"
                 }
               `}
               title="Previous song"
             >
-              <SkipBack size={20} fill="currentColor" />
+              <SkipBack size={19} fill="currentColor" />
             </motion.button>
 
             {/* Play/Pause Button */}
@@ -302,12 +330,12 @@ export default function MusicPlayer() {
                 ${
                   theme === "dark"
                     ? "text-[#a7a7a7] hover:text-white"
-                    : "text-stone-500 hover:text-stone-900"
+                    : "text-stone-700 hover:text-stone-950"
                 }
               `}
               title="Next song"
             >
-              <SkipForward size={20} fill="currentColor" />
+              <SkipForward size={19} fill="currentColor" />
             </motion.button>
 
             {/* Repeat */}
@@ -322,24 +350,48 @@ export default function MusicPlayer() {
                     ? "text-red-500"
                     : theme === "dark"
                     ? "text-[#a7a7a7] hover:text-white"
-                    : "text-stone-400 hover:text-stone-900"
+                    : "text-stone-700 hover:text-stone-950"
                 }
               `}
               title={`Repeat: ${repeatMode.toUpperCase()}`}
             >
               {repeatMode === "one" ? (
-                <Repeat1 size={18} />
+                <Repeat1 size={17} />
               ) : (
-                <Repeat size={18} />
+                <Repeat size={17} />
               )}
+            </motion.button>
+
+            {/* Live Waveform Toggle Button (Beside Repeat) */}
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setUseWaveformMode((v) => !v)}
+              className={`
+                p-1.5 rounded-full transition cursor-pointer
+                ${
+                  useWaveformMode
+                    ? "text-red-500 bg-red-500/10"
+                    : theme === "dark"
+                    ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                    : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
+                }
+              `}
+              title={
+                useWaveformMode
+                  ? "Live Waveform active (Click for classic slider)"
+                  : "Classic slider active (Click for live waveform)"
+              }
+            >
+              <Activity size={16} />
             </motion.button>
           </div>
 
           {/* Progress & Scrolling Waveform Seek Bar + Progress % Badge */}
-          <div className="flex w-full items-center gap-2.5 sm:gap-3">
+          <div className="flex w-full items-center gap-2 sm:gap-2.5">
             <span
               className={`
-              w-9 text-right text-[11px] font-medium shrink-0
+              w-8 text-right text-[11px] font-medium tabular-nums shrink-0
               ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
             `}
             >
@@ -347,9 +399,9 @@ export default function MusicPlayer() {
             </span>
 
             {useWaveformMode ? (
-              <div className="relative flex-1 flex items-center h-7 px-1 group cursor-pointer">
+              <div className="relative flex-1 min-w-0 flex items-center h-7 px-0.5 group cursor-pointer">
                 <ScrollingWaveform
-                  height={26}
+                  height={24}
                   barWidth={3}
                   barGap={2}
                   speed={32}
@@ -376,7 +428,7 @@ export default function MusicPlayer() {
                 step="0.1"
                 value={progress}
                 onChange={(e) => seekProgress(e.target.value)}
-                className="spotify-range flex-1"
+                className="spotify-range flex-1 min-w-0"
                 style={{
                   "--progress": `${progress}%`,
                 }}
@@ -385,7 +437,7 @@ export default function MusicPlayer() {
 
             <span
               className={`
-              w-9 text-[11px] font-medium shrink-0
+              w-8 text-left text-[11px] font-medium tabular-nums shrink-0
               ${theme === "dark" ? "text-[#a7a7a7]" : "text-stone-500"}
             `}
             >
@@ -395,7 +447,7 @@ export default function MusicPlayer() {
             {/* Desktop Song Percentage Pill Badge */}
             <span
               className={`
-                text-[10px] font-black tabular-nums px-2 py-0.5 rounded-full select-none shrink-0
+                text-[10px] font-bold tabular-nums px-2 py-0.5 rounded-full select-none shrink-0 ml-1
                 ${
                   theme === "dark"
                     ? "bg-red-500/15 text-red-400 border border-red-500/30"
@@ -410,7 +462,7 @@ export default function MusicPlayer() {
         </div>
 
         {/* Mobile Mini-Player Controls Group: Percentage + Favorite + Play/Pause */}
-        <div className="relative z-10 flex items-center gap-2.5 sm:gap-3 lg:hidden ml-auto shrink-0">
+        <div className="relative z-10 flex items-center gap-2 sm:gap-2.5 lg:hidden ml-auto shrink-0">
           {/* Progress Percentage Badge */}
           <span
             className={`
@@ -441,7 +493,7 @@ export default function MusicPlayer() {
                   ? "text-red-500 bg-red-500/15"
                   : theme === "dark"
                   ? "text-[#a7a7a7] hover:text-white hover:bg-white/10"
-                  : "text-stone-400 hover:text-stone-900 hover:bg-stone-200/60"
+                  : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/80"
               }
             `}
             title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
@@ -481,31 +533,7 @@ export default function MusicPlayer() {
         </div>
 
         {/* RIGHT: Auxiliary Controls (Queue, Volume, Fullscreen) */}
-        <div className="hidden lg:w-[320px] lg:flex-none items-center justify-end gap-3 lg:flex">
-          {/* Toggle Waveform Mode Button */}
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setUseWaveformMode((v) => !v)}
-            className={`
-              p-1.5 rounded-full transition cursor-pointer
-              ${
-                useWaveformMode
-                  ? "text-red-500 bg-red-500/10"
-                  : theme === "dark"
-                  ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
-                  : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-              }
-            `}
-            title={
-              useWaveformMode
-                ? "Waveform visualizer active (Click for classic slider)"
-                : "Classic slider active (Click for live waveform visualizer)"
-            }
-          >
-            <Activity size={16} />
-          </motion.button>
-
+        <div className="hidden lg:w-[190px] xl:w-[230px] 2xl:w-[260px] lg:flex-none items-center justify-end gap-2 xl:gap-3 lg:flex">
           {/* Queue Button */}
           <motion.button
             whileHover={{ scale: 1.1 }}
@@ -517,38 +545,38 @@ export default function MusicPlayer() {
                   ? "text-red-500 bg-red-500/10"
                   : theme === "dark"
                   ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
-                  : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+                  : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
               }
             `}
             title="Current Queue"
           >
-            <ListMusic size={18} />
+            <ListMusic size={17} />
           </motion.button>
 
           {/* Volume Control */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 xl:gap-2">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
               onClick={toggleMute}
               className={`
-                transition cursor-pointer
+                transition cursor-pointer p-1
                 ${
                   isMuted || volume === 0
                     ? "text-red-400"
                     : theme === "dark"
                     ? "text-[#a7a7a7] hover:text-white"
-                    : "text-stone-500 hover:text-stone-900"
+                    : "text-stone-700 hover:text-stone-950"
                 }
               `}
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted || volume === 0 ? (
-                <VolumeX size={18} />
+                <VolumeX size={17} />
               ) : volume < 50 ? (
-                <Volume1 size={18} />
+                <Volume1 size={17} />
               ) : (
-                <Volume2 size={18} />
+                <Volume2 size={17} />
               )}
             </motion.button>
 
@@ -559,7 +587,7 @@ export default function MusicPlayer() {
               max="100"
               value={isMuted ? 0 : volume}
               onChange={(e) => handleVolumeChange(e.target.value)}
-              className="spotify-range w-[84px]"
+              className="spotify-range w-[60px] xl:w-[84px]"
               style={{
                 "--progress": `${isMuted ? 0 : volume}%`,
               }}
@@ -575,7 +603,7 @@ export default function MusicPlayer() {
               ${
                 theme === "dark"
                   ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
-                  : "text-stone-500 hover:text-stone-900 hover:bg-stone-100"
+                  : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
               }
             `}
             title="Open Fullscreen Player"
@@ -608,7 +636,14 @@ export default function MusicPlayer() {
             <div className="flex items-center justify-between h-10 shrink-0 gap-2">
               <button
                 onClick={() => setShowMobilePlayer(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
+                className={`
+                  flex h-9 w-9 items-center justify-center rounded-full transition active:scale-90 cursor-pointer
+                  ${
+                    theme === "dark"
+                      ? "bg-white/10 text-white hover:bg-white/20"
+                      : "bg-stone-900/10 text-stone-800 hover:bg-stone-900/20"
+                  }
+                `}
                 title="Collapse Player"
               >
                 <ChevronDown size={22} />
@@ -626,7 +661,14 @@ export default function MusicPlayer() {
               <div className="flex items-center gap-1.5 shrink-0">
                 <button
                   onClick={() => setShowSongInfoModal(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
+                  className={`
+                    flex h-9 w-9 items-center justify-center rounded-full transition active:scale-90 cursor-pointer
+                    ${
+                      theme === "dark"
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "bg-stone-900/10 text-stone-800 hover:bg-stone-900/20"
+                    }
+                  `}
                   title="Song Credits & Information"
                 >
                   <Info size={17} />
@@ -634,7 +676,14 @@ export default function MusicPlayer() {
 
                 <button
                   onClick={() => setShowQueueModal(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/20 text-current backdrop-blur-md transition active:scale-90 cursor-pointer"
+                  className={`
+                    flex h-9 w-9 items-center justify-center rounded-full transition active:scale-90 cursor-pointer
+                    ${
+                      theme === "dark"
+                        ? "bg-white/10 text-white hover:bg-white/20"
+                        : "bg-stone-900/10 text-stone-800 hover:bg-stone-900/20"
+                    }
+                  `}
                   title="View Queue"
                 >
                   <ListMusic size={18} />
@@ -661,7 +710,7 @@ export default function MusicPlayer() {
               </div>
             </div>
 
-            {/* Song Meta & Favorite Heart */}
+            {/* Song Meta, Add to Playlist & Favorite Heart */}
             <div className="shrink-0 mb-1.5 sm:mb-2 px-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0 flex-1">
@@ -673,29 +722,59 @@ export default function MusicPlayer() {
                   </p>
                 </div>
 
-                <motion.button
-                  whileTap={{ scale: 0.8 }}
-                  onClick={() => toggleLike(currentTrack)}
-                  className="p-1.5 cursor-pointer shrink-0"
-                >
-                  <Heart
-                    size={24}
-                    fill={liked ? "currentColor" : "none"}
-                    className={liked ? "text-red-500" : "opacity-70"}
-                  />
-                </motion.button>
+                {/* Mobile Action Buttons: Add to Playlist + Like Heart */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => setShowPlaylistModal(true)}
+                    className={`
+                      p-2 rounded-full cursor-pointer transition
+                      ${
+                        theme === "dark"
+                          ? "text-white/80 hover:text-white hover:bg-white/10"
+                          : "text-stone-800 hover:text-stone-950 hover:bg-stone-900/10"
+                      }
+                    `}
+                    title="Add to Playlist"
+                  >
+                    <ListPlus size={24} />
+                  </motion.button>
+
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={() => toggleLike(currentTrack)}
+                    className={`
+                      p-2 rounded-full cursor-pointer shrink-0 transition
+                      ${
+                        liked
+                          ? "text-red-500 bg-red-500/15"
+                          : theme === "dark"
+                          ? "text-white/80 hover:text-white hover:bg-white/10"
+                          : "text-stone-800 hover:text-stone-950 hover:bg-stone-900/10"
+                      }
+                    `}
+                    title={liked ? "Remove from Liked Songs" : "Save to Liked Songs"}
+                  >
+                    <Heart
+                      size={24}
+                      fill={liked ? "currentColor" : "none"}
+                      className={liked ? "text-red-500" : ""}
+                    />
+                  </motion.button>
+                </div>
               </div>
             </div>
 
             {/* Seek Bar / Live Scrolling Waveform Visualizer */}
             <div className="shrink-0 mb-2 sm:mb-3 px-1">
               {useWaveformMode ? (
-                <div className="p-2 sm:p-2.5 rounded-xl bg-white/[0.05] border border-white/10 mb-1">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-red-400 mb-1">
-                    <span className="flex items-center gap-1">
+                <div className="p-2 sm:p-2.5 rounded-xl bg-black/[0.04] dark:bg-white/[0.05] border border-black/10 dark:border-white/10 mb-1">
+                  <div className="flex items-center justify-between text-[10px] font-bold text-red-500 dark:text-red-400 mb-1.5">
+                    <div className="flex items-center gap-1.5">
                       <span className={`h-1.5 w-1.5 rounded-full bg-red-500 ${isPlaying ? "animate-pulse" : ""}`} />
-                      LIVE WAVEFORM
-                    </span>
+                      <span>LIVE WAVEFORM</span>
+                    </div>
+
                     <button
                       onClick={() => setUseWaveformMode(false)}
                       className="text-[9.5px] text-current opacity-70 underline cursor-pointer"
@@ -736,7 +815,7 @@ export default function MusicPlayer() {
                       "--progress": `${progress}%`,
                     }}
                   />
-                  <div className="flex justify-end mt-0.5">
+                  <div className="flex justify-end items-center mt-0.5">
                     <button
                       onClick={() => setUseWaveformMode(true)}
                       className="text-[9.5px] font-semibold text-red-500 underline cursor-pointer"
@@ -817,13 +896,13 @@ export default function MusicPlayer() {
             </div>
 
             {/* Bottom Utilities: Audio Quality badge & Credits trigger */}
-            <div className="flex items-center justify-between text-[11px] opacity-75 border-t border-white/10 pt-2 shrink-0 px-1">
+            <div className="flex items-center justify-between text-[11px] opacity-75 border-t border-black/10 dark:border-white/10 pt-2 shrink-0 px-1">
               <button
                 onClick={() => setShowSongInfoModal(true)}
-                className="flex items-center gap-1.5 font-medium hover:text-red-400 transition cursor-pointer"
+                className="flex items-center gap-1.5 font-medium hover:text-red-500 transition cursor-pointer"
                 title="View Song Credits & Info"
               >
-                <Sparkles size={12} className="text-amber-400" />
+                <Sparkles size={12} className="text-amber-500" />
                 Dolby 320 kbps • Credits
               </button>
 
@@ -857,6 +936,15 @@ export default function MusicPlayer() {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowPlaylistModal(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer"
+                  title="Add to Playlist"
+                >
+                  <ListPlus size={15} />
+                  <span>+ Playlist</span>
+                </button>
+
                 <button
                   onClick={() => setShowSongInfoModal(true)}
                   className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-white/20 transition cursor-pointer"
@@ -932,7 +1020,16 @@ export default function MusicPlayer() {
             </div>
 
             {/* Playback Controls (Always Guaranteed to be Visible) */}
-            <div className="flex items-center justify-center gap-6 md:gap-8 shrink-0 mb-2">
+            <div className="flex items-center justify-center gap-5 md:gap-7 shrink-0 mb-2">
+              {/* Add to Playlist */}
+              <button
+                onClick={() => setShowPlaylistModal(true)}
+                className="text-white/60 hover:text-white hover:scale-110 transition cursor-pointer p-1"
+                title="Add to Playlist"
+              >
+                <ListPlus size={22} />
+              </button>
+
               {/* Shuffle */}
               <button
                 onClick={() => setShuffle((v) => !v)}
@@ -1359,6 +1456,193 @@ export default function MusicPlayer() {
                 <button
                   onClick={() => setShowSongInfoModal(false)}
                   className="px-4 py-2 text-xs font-bold rounded-xl bg-red-500 text-white hover:bg-red-400 transition cursor-pointer shadow-md"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ========================================================================= */}
+      {/* 6. DEDICATED ADD TO PLAYLIST MODAL (All Screens)                          */}
+      {/* ========================================================================= */}
+      <AnimatePresence>
+        {showPlaylistModal && (
+          <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowPlaylistModal(false)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-md cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.94, opacity: 0, y: 15 }}
+              onClick={(e) => e.stopPropagation()}
+              className={`
+                relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border shadow-2xl backdrop-blur-2xl flex flex-col max-h-[85vh]
+                ${
+                  theme === "dark"
+                    ? "bg-[#181818] border-white/10 text-white"
+                    : "bg-[#faf8f5] border-stone-300 text-stone-900"
+                }
+              `}
+            >
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b p-4 border-stone-300/60 dark:border-white/10 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/15 text-red-500 shrink-0">
+                    <ListPlus size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-bold truncate">Add to Playlist</h3>
+                    <p className="text-[11px] opacity-60 truncate max-w-[200px]">
+                      {currentTrack.title}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowPlaylistModal(false)}
+                  className="rounded-full p-1.5 opacity-70 hover:opacity-100 transition cursor-pointer"
+                  title="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Current Track Banner Preview */}
+              <div className="p-3 border-b border-stone-300/60 dark:border-white/10 shrink-0 bg-black/5 dark:bg-white/[0.02]">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={currentTrack.image}
+                    alt={currentTrack.title}
+                    className="h-11 w-11 rounded-lg object-cover shadow-sm shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold truncate">{currentTrack.title}</p>
+                    <p className="text-[11px] opacity-65 truncate mt-0.5">
+                      {currentTrack.artist} {currentTrack.album ? `• ${currentTrack.album}` : ""}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action: Create New Playlist Button */}
+              <div className="p-3 border-b border-stone-300/60 dark:border-white/10 shrink-0">
+                <button
+                  onClick={() => {
+                    setShowPlaylistModal(false);
+                    if (!isAuthenticated) {
+                      openAuthModal("signup");
+                    } else {
+                      openCreatePlaylistModal();
+                    }
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 text-xs font-bold shadow-md transition cursor-pointer"
+                >
+                  <Plus size={16} />
+                  <span>Create New Playlist</span>
+                </button>
+              </div>
+
+              {/* Playlists List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5 spotify-scrollbar min-h-[140px] max-h-[260px]">
+                {!isAuthenticated ? (
+                  <div className="py-6 px-4 text-center">
+                    <p className="text-xs opacity-75 mb-3 leading-relaxed">
+                      Log in to create custom playlists and save this track to your personal library.
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowPlaylistModal(false);
+                        openAuthModal("login");
+                      }}
+                      className="px-4 py-1.5 rounded-full bg-red-500 text-white text-xs font-bold hover:bg-red-400 transition cursor-pointer"
+                    >
+                      Log in / Sign up
+                    </button>
+                  </div>
+                ) : customPlaylists.length === 0 ? (
+                  <div className="py-6 px-4 text-center">
+                    <p className="text-xs opacity-65 leading-relaxed">
+                      You don&apos;t have any custom playlists yet. Click above to create your first one!
+                    </p>
+                  </div>
+                ) : (
+                  customPlaylists.map((playlist) => {
+                    const isSongInPlaylist = (playlist.tracks || []).some(
+                      (t) => String(t.id) === String(currentTrack.id),
+                    );
+                    const count = playlist.tracks?.length || 0;
+
+                    return (
+                      <button
+                        key={playlist.id}
+                        onClick={() => {
+                          if (isSongInPlaylist) {
+                            removeSongFromPlaylist(playlist.id, currentTrack.id);
+                          } else {
+                            addSongToPlaylist(playlist.id, currentTrack);
+                          }
+                        }}
+                        className={`
+                          flex w-full items-center justify-between p-2.5 rounded-xl transition cursor-pointer text-left
+                          ${
+                            isSongInPlaylist
+                              ? "bg-red-500/15 border border-red-500/30 text-red-500"
+                              : theme === "dark"
+                              ? "hover:bg-white/5 border border-transparent"
+                              : "hover:bg-stone-200/60 border border-transparent"
+                          }
+                        `}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                          <img
+                            src={
+                              playlist.image ||
+                              "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg"
+                            }
+                            alt={playlist.title}
+                            className="h-10 w-10 rounded-lg object-cover shrink-0"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold truncate">{playlist.title}</p>
+                            <p className="text-[10.5px] opacity-60 truncate mt-0.5">
+                              {count} {count === 1 ? "song" : "songs"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0">
+                          {isSongInPlaylist ? (
+                            <span className="flex items-center gap-1 text-[11px] font-bold text-red-500 bg-red-500/20 px-2.5 py-1 rounded-full">
+                              <Check size={12} />
+                              Added
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-[11px] font-semibold opacity-60 hover:opacity-100 px-2 py-1">
+                              <Plus size={13} />
+                              Add
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="border-t p-3 border-stone-300/60 dark:border-white/10 shrink-0 flex justify-end">
+                <button
+                  onClick={() => setShowPlaylistModal(false)}
+                  className="px-4 py-1.5 rounded-xl bg-stone-200 dark:bg-white/10 text-xs font-bold hover:opacity-80 transition cursor-pointer"
                 >
                   Done
                 </button>

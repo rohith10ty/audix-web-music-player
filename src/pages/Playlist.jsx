@@ -7,6 +7,7 @@ import TrackRow, { TrackHeader } from "@/components/music/TrackRow";
 import { usePlayer } from "@/context/PlayerContext";
 import { useTheme } from "@/context/ThemeContext";
 import { playlists, songs } from "@/data/musicData";
+import Footer from "@/components/common/Footer";
 
 const ADD_LANGUAGES = ["All", "Telugu", "Tamil", "Hindi", "English", "Malayalam", "Kannada", "Punjabi"];
 
@@ -442,6 +443,8 @@ export default function Playlist() {
             </div>
           </div>
         )}
+
+        <Footer />
       </div>
     </main>
   );

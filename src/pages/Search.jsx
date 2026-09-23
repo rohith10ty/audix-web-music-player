@@ -9,6 +9,7 @@ import { artists, searchCategories, songs } from "@/data/musicData";
 import { useTheme } from "@/context/ThemeContext";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
 import { useLiveSearch } from "@/hooks/useLiveMusic";
+import Footer from "@/components/common/Footer";
 
 const LANGUAGES = [
   "All",
@@ -112,11 +113,11 @@ export default function Search() {
       `}
     >
       <div className="px-4 pb-36 sm:pb-24 pt-4 sm:px-6 lg:pb-16">
-        {/* Search Input Bar */}
-        <div className="mb-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        {/* Search Input Bar (Mobile only; on iPad and Desktop the Topbar Search is active) */}
+        <div className="mb-4 flex flex-col md:flex-row gap-3 items-stretch md:items-center">
           <div
             className={`
-              flex h-[48px] min-h-[48px] w-full flex-1 max-w-[560px] items-center rounded-full px-5 shadow-md transition-all duration-200
+              flex h-[48px] min-h-[48px] w-full flex-1 max-w-[560px] items-center rounded-full px-5 shadow-md transition-all duration-200 md:hidden
               ${
                 theme === "dark"
                   ? "bg-[#242424] text-white border border-white/10 focus-within:border-red-500/60 focus-within:bg-[#282828]"
@@ -155,7 +156,7 @@ export default function Search() {
             {query && !isSearching && (
               <button
                 onClick={() => handleQueryChange("")}
-                className="opacity-70 hover:opacity-100 p-1 mr-1"
+                className="opacity-70 hover:opacity-100 p-1 mr-1 cursor-pointer"
                 title="Clear search"
               >
                 <X size={20} />
@@ -186,7 +187,7 @@ export default function Search() {
             <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 xl:grid-cols-4">
               {searchCategories.map((category) => (
                 <motion.div
-                  key={category.title}
+                  key={category.id || category.title || category.name}
                   whileHover={{
                     y: -4,
                     scale: 1.02,
@@ -196,7 +197,7 @@ export default function Search() {
                     stiffness: 330,
                     damping: 24,
                   }}
-                  onClick={() => handleQueryChange(category.filter)}
+                  onClick={() => handleQueryChange(category.filter || category.title || category.name)}
                   className={`
                     group relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-xl border p-4 shadow-sm bg-gradient-to-br ${category.color}
                     ${
@@ -207,18 +208,20 @@ export default function Search() {
                   `}
                 >
                   <h2 className="relative z-10 text-lg sm:text-xl font-black text-white drop-shadow-md">
-                    {category.title}
+                    {category.title || category.name}
                   </h2>
 
-                  <motion.img
-                    whileHover={{
-                      rotate: 15,
-                      scale: 1.1,
-                    }}
-                    src={category.image}
-                    alt=""
-                    className="absolute -bottom-4 -right-4 h-[95px] w-[95px] rotate-12 rounded-lg object-cover shadow-2xl transition-transform"
-                  />
+                  {category.image && (
+                    <motion.img
+                      whileHover={{
+                        rotate: 15,
+                        scale: 1.1,
+                      }}
+                      src={category.image}
+                      alt={category.title || category.name}
+                      className="absolute -bottom-4 -right-4 h-[95px] w-[95px] rotate-12 rounded-lg object-cover shadow-2xl transition-transform"
+                    />
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -280,6 +283,8 @@ export default function Search() {
             )}
           </div>
         )}
+
+        <Footer />
       </div>
     </main>
   );
