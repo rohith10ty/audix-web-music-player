@@ -1,6 +1,6 @@
 import { ArrowLeft, Check, Play, Plus, Search, Share2, Sparkles, Trash2, X } from "lucide-react";
 import { motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import TrackRow, { TrackHeader } from "@/components/music/TrackRow";

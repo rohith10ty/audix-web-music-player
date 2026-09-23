@@ -64,6 +64,12 @@ export default function MusicCard({ item }) {
               transition={{ duration: 0.35 }}
               src={item.image}
               alt={item.title}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = item.round
+                  ? "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=500&q=80"
+                  : "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=500&q=80";
+              }}
               className="h-full w-full object-cover"
             />
 
@@ -82,7 +88,9 @@ export default function MusicCard({ item }) {
               whileTap={{ scale: 0.88 }}
               onClick={(event) => {
                 event.stopPropagation();
-                if (item.track) {
+                if (item.type === "playlist" && item.tracks && item.tracks.length > 0) {
+                  playTrack(item.tracks[0], item.tracks);
+                } else if (item.track) {
                   playTrack(item.track);
                 } else {
                   openItem();

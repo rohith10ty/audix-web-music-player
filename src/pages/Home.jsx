@@ -2,12 +2,11 @@ import { motion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MusicSection from "@/components/music/MusicSection";
-import { artists, songs } from "@/data/musicData";
+import { artists, playlists, songs } from "@/data/musicData";
 import { useTheme } from "@/context/ThemeContext";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { usePlayer } from "@/context/PlayerContext";
 import { InteractiveHoverButton } from "@/components/ui/interactive-hover-button";
-import { useLiveHome } from "@/hooks/useLiveMusic";
 import Footer from "@/components/common/Footer";
 
 const LANGUAGES = [
@@ -29,9 +28,6 @@ export default function Home() {
   const pillsContainerRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-
-  // Dynamic live songs and playlists from JioSaavn API with caching & fallback
-  const { sections: liveSections } = useLiveHome(selectedLanguage);
 
   // Dynamic greeting based on current hour
   const greeting = useMemo(() => {
@@ -80,50 +76,114 @@ export default function Home() {
     }
   };
 
+  // Helper: Select distinct album tracks to avoid repetitive album arts & repetitive tracks
+  const getDistinctAlbumTracks = useCallback((trackList, count = 6, fallbackTracks = []) => {
+    const selected = [];
+    const seenAlbums = new Set();
+    const seenImages = new Set();
+    const seenTitles = new Set();
+
+    for (const track of trackList) {
+      if (!track || !track.title) continue;
+      const albumKey = (track.album || "").toLowerCase().trim();
+      const imageKey = (track.image || "").trim();
+      const titleKey = (track.title || "").toLowerCase().trim();
+
+      if (seenTitles.has(titleKey)) continue;
+
+      if (!seenAlbums.has(albumKey) && !seenImages.has(imageKey)) {
+        selected.push(track);
+        if (albumKey) seenAlbums.add(albumKey);
+        if (imageKey) seenImages.add(imageKey);
+        seenTitles.add(titleKey);
+        if (selected.length >= count) break;
+      }
+    }
+
+    if (selected.length < count) {
+      for (const track of [...trackList, ...fallbackTracks]) {
+        if (!track || !track.title) continue;
+        const titleKey = (track.title || "").toLowerCase().trim();
+        if (!seenTitles.has(titleKey)) {
+          selected.push(track);
+          seenTitles.add(titleKey);
+          if (selected.length >= count) break;
+        }
+      }
+    }
+
+    return selected.slice(0, count);
+  }, []);
+
   // Top 6 Trending Quick Picks (Real songs, immediate 1-click play)
   const topQuickPicks = useMemo(() => {
     if (selectedLanguage === "All") {
-      // Pick the top trending hits across languages
       const multiLangTop = [
-        songs.find((s) => s.id === "samajavaragamana") || songs[0],
+        songs.find((s) => s.id === "kurchi-madathapetti") || songs.find((s) => s.id === "samajavaragamana") || songs[0],
         songs.find((s) => s.id === "blinding-lights") || songs[12],
-        songs.find((s) => s.id === "kesariya") || songs[33],
-        songs.find((s) => s.id === "arabic-kuthu") || songs[23],
-        songs.find((s) => s.id === "darshana") || songs[43],
-        songs.find((s) => s.id === "ra-ra-rakkamma") || songs[53],
+        songs.find((s) => s.id === "kaavaalaa") || songs.find((s) => s.id === "arabic-kuthu") || songs[23],
+        songs.find((s) => s.id === "kesariya") || songs.find((s) => s.id === "tauba-tauba") || songs[33],
+        songs.find((s) => s.id === "illuminati-aavesham") || songs.find((s) => s.id === "darshana") || songs[43],
+        songs.find((s) => s.id === "singara-siriye-kantara-real") || songs.find((s) => s.id === "ra-ra-rakkamma") || songs[53],
       ].filter(Boolean);
 
-      return multiLangTop.length === 6 ? multiLangTop : songs.slice(0, 6);
+      return multiLangTop.length === 6 ? multiLangTop : getDistinctAlbumTracks(songs, 6);
     }
 
     // Filter by specific language
     const langSongs = songs.filter((s) => s.language === selectedLanguage);
-    return langSongs.slice(0, 6);
-  }, [selectedLanguage]);
+    return getDistinctAlbumTracks(langSongs, 6);
+  }, [selectedLanguage, getDistinctAlbumTracks]);
 
   // Dynamic Categorized Music Collections (Trending, Romance, Party, Artists)
   const categorizedSections = useMemo(() => {
-    // When JioSaavn API returns live structured sections
-    if (liveSections && liveSections.length > 0) {
-      return liveSections;
-    }
-
     const langSongs = songs.filter((s) => s.language === selectedLanguage);
-    const langArtists = artists.filter((a) => a.language === selectedLanguage);
+    const langArtists = artists.filter((a) =>
+      selectedLanguage === "All" ? true : a.language === selectedLanguage
+    );
 
     if (selectedLanguage === "All") {
+      const topHits = [
+        songs.find((s) => s.id === "samajavaragamana"),
+        songs.find((s) => s.id === "blinding-lights"),
+        songs.find((s) => s.id === "arabic-kuthu"),
+        songs.find((s) => s.id === "kesariya"),
+        songs.find((s) => s.id === "darshana"),
+        songs.find((s) => s.id === "ra-ra-rakkamma"),
+      ].filter(Boolean);
+
+      const blockbusters = [
+        songs.find((s) => s.id === "kurchi-madathapetti"),
+        songs.find((s) => s.id === "shape-of-you"),
+        songs.find((s) => s.id === "kaavaalaa"),
+        songs.find((s) => s.id === "tauba-tauba"),
+        songs.find((s) => s.id === "illuminati-aavesham"),
+        songs.find((s) => s.id === "singara-siriye-kantara-real") || songs.find((s) => s.id === "singara-siriye"),
+      ].filter(Boolean);
+
+      const allRomance = [
+        songs.find((s) => s.id === "chuttamalle"),
+        songs.find((s) => s.id === "birds-of-a-feather") || songs.find((s) => s.id === "golden-hour"),
+        songs.find((s) => s.id === "megham-karukatha"),
+        songs.find((s) => s.id === "apna-bana-le"),
+        songs.find((s) => s.id === "malare"),
+        songs.find((s) => s.id === "soul-of-dia"),
+      ].filter(Boolean);
+
+      const allParty = [
+        songs.find((s) => s.id === "naatu-naatu"),
+        songs.find((s) => s.id === "stay"),
+        songs.find((s) => s.id === "rowdy-baby"),
+        songs.find((s) => s.id === "aaj-ki-raat"),
+        songs.find((s) => s.id === "manavalan-thug"),
+        songs.find((s) => s.id === "karabul") || songs.find((s) => s.id === "tagaru-banthu"),
+      ].filter(Boolean);
+
       return [
         {
           title: "🔥 Trending Indian & Global Hits",
           language: "All",
-          items: [
-            songs[0], // Samajavaragamana
-            songs[12], // Blinding Lights
-            songs[23], // Arabic Kuthu
-            songs[33], // Kesariya
-            songs[43], // Darshana
-            songs[53], // Ra Ra Rakkamma
-          ].filter(Boolean).map((s) => ({
+          items: topHits.map((s) => ({
             id: s.id,
             title: s.title,
             subtitle: `${s.artist} • ${s.album}`,
@@ -133,16 +193,31 @@ export default function Home() {
           })),
         },
         {
-          title: "🚀 Most Streamed Blockbusters",
+          title: "🌟 Featured Playlists & Mixes",
           language: "All",
           items: [
-            songs[1], // Butta Bomma
-            songs[16], // Shape of You
-            songs[26], // Rowdy Baby
-            songs[34], // Tum Hi Ho
-            songs[44], // Malare
-            songs[54], // Singara Siriye
-          ].filter(Boolean).map((s) => ({
+            playlists.find((p) => p.id === "telugu-hits"),
+            playlists.find((p) => p.id === "english-top"),
+            playlists.find((p) => p.id === "tamil-hits"),
+            playlists.find((p) => p.id === "hindi-hits"),
+            playlists.find((p) => p.id === "malayalam-hits"),
+            playlists.find((p) => p.id === "kannada-hits"),
+          ]
+            .filter(Boolean)
+            .map((p) => ({
+              id: p.id,
+              title: p.title,
+              subtitle: `${p.followers} • Playlist`,
+              image: p.image,
+              type: "playlist",
+              tracks: p.tracks,
+              track: p.tracks?.[0],
+            })),
+        },
+        {
+          title: "🚀 Most Streamed Blockbusters",
+          language: "All",
+          items: blockbusters.map((s) => ({
             id: s.id,
             title: s.title,
             subtitle: `${s.artist} • ${s.album}`,
@@ -154,37 +229,31 @@ export default function Home() {
         {
           title: "💖 Romantic Melodies & Love Hits",
           language: "All",
-          items: songs
-            .filter((s) => s.genre === "Melody & Romance")
-            .slice(0, 6)
-            .map((s) => ({
-              id: s.id,
-              title: s.title,
-              subtitle: `${s.artist} • ${s.album}`,
-              image: s.image,
-              type: "song",
-              track: s,
-            })),
+          items: allRomance.map((s) => ({
+            id: s.id,
+            title: s.title,
+            subtitle: `${s.artist} • ${s.album}`,
+            image: s.image,
+            type: "song",
+            track: s,
+          })),
         },
         {
           title: "⚡ Party & Dance Bangers",
           language: "All",
-          items: songs
-            .filter((s) => s.genre === "Party & Dance")
-            .slice(0, 6)
-            .map((s) => ({
-              id: s.id,
-              title: s.title,
-              subtitle: `${s.artist} • ${s.album}`,
-              image: s.image,
-              type: "song",
-              track: s,
-            })),
+          items: allParty.map((s) => ({
+            id: s.id,
+            title: s.title,
+            subtitle: `${s.artist} • ${s.album}`,
+            image: s.image,
+            type: "song",
+            track: s,
+          })),
         },
         {
           title: "🎤 Popular Artists",
           language: "All",
-          items: artists.slice(0, 6).map((artist) => ({
+          items: artists.slice(0, 8).map((artist) => ({
             id: artist.id,
             title: artist.name,
             subtitle: `${artist.language} • Artist`,
@@ -196,12 +265,27 @@ export default function Home() {
       ];
     }
 
-    // Specific Language Categorized Sections
+    // Specific Language Categorized Sections (Telugu, English, Tamil, Hindi, Malayalam, Kannada)
+    const distinctTrending = getDistinctAlbumTracks(langSongs, 6);
+    const langPlaylists = playlists.filter((p) => p.language === selectedLanguage);
+    const romanceSongs = langSongs.filter((s) => s.genre === "Melody & Romance");
+    const distinctRomance = getDistinctAlbumTracks(romanceSongs, 6, langSongs);
+
+    const partySongs = langSongs.filter(
+      (s) => s.genre === "Party & Dance" || s.genre === "Workout & Energy"
+    );
+    const distinctParty = getDistinctAlbumTracks(partySongs, 6, langSongs);
+
+    const chillSongs = langSongs.filter(
+      (s) => s.genre === "Late Night Chill" || s.genre === "Acoustic & Lo-Fi" || s.genre === "Retro Classics"
+    );
+    const distinctChill = getDistinctAlbumTracks(chillSongs, 6);
+
     const sections = [
       {
-        title: `🔥 Trending ${selectedLanguage} Chartbusters`,
+        title: `🔥 Top Trending ${selectedLanguage} Chartbusters`,
         language: selectedLanguage,
-        items: langSongs.slice(0, 6).map((s) => ({
+        items: distinctTrending.map((s) => ({
           id: s.id,
           title: s.title,
           subtitle: `${s.artist} • ${s.album}`,
@@ -212,12 +296,27 @@ export default function Home() {
       },
     ];
 
-    const romanceSongs = langSongs.filter((s) => s.genre === "Melody & Romance");
-    if (romanceSongs.length > 0) {
+    if (langPlaylists.length > 0) {
       sections.push({
-        title: `💖 ${selectedLanguage} Romantic Melodies`,
+        title: `🌟 Featured ${selectedLanguage} Playlists`,
         language: selectedLanguage,
-        items: romanceSongs.slice(0, 6).map((s) => ({
+        items: langPlaylists.map((p) => ({
+          id: p.id,
+          title: p.title,
+          subtitle: `${p.followers} • Playlist`,
+          image: p.image,
+          type: "playlist",
+          tracks: p.tracks,
+          track: p.tracks?.[0],
+        })),
+      });
+    }
+
+    if (distinctRomance.length > 0) {
+      sections.push({
+        title: `💖 Romantic ${selectedLanguage} Melodies`,
+        language: selectedLanguage,
+        items: distinctRomance.map((s) => ({
           id: s.id,
           title: s.title,
           subtitle: `${s.artist} • ${s.album}`,
@@ -228,14 +327,26 @@ export default function Home() {
       });
     }
 
-    const partySongs = langSongs.filter(
-      (s) => s.genre === "Party & Dance" || s.genre === "Workout & Energy",
-    );
-    if (partySongs.length > 0) {
+    if (distinctParty.length > 0) {
       sections.push({
         title: `⚡ ${selectedLanguage} Energy & Party Hits`,
         language: selectedLanguage,
-        items: partySongs.slice(0, 6).map((s) => ({
+        items: distinctParty.map((s) => ({
+          id: s.id,
+          title: s.title,
+          subtitle: `${s.artist} • ${s.album}`,
+          image: s.image,
+          type: "song",
+          track: s,
+        })),
+      });
+    }
+
+    if (distinctChill.length >= 3) {
+      sections.push({
+        title: `✨ Evergreen & Chill ${selectedLanguage}`,
+        language: selectedLanguage,
+        items: distinctChill.map((s) => ({
           id: s.id,
           title: s.title,
           subtitle: `${s.artist} • ${s.album}`,
@@ -262,7 +373,7 @@ export default function Home() {
     }
 
     return sections;
-  }, [selectedLanguage, liveSections]);
+  }, [selectedLanguage, getDistinctAlbumTracks]);
 
   return (
     <main
