@@ -50,7 +50,7 @@ export default function TrackRow({
   const [showPlaylistSubmenu, setShowPlaylistSubmenu] = useState(false);
   const [queueToast, setQueueToast] = useState("");
 
-  const active = currentTrack.id === track.id;
+  const active = currentTrack?.id === track.id;
   const liked = isLiked(track.id);
 
   const handlePlay = () => {

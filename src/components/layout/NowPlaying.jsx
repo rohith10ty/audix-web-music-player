@@ -7,9 +7,38 @@ import { useTheme } from "@/context/ThemeContext";
 
 export default function NowPlaying() {
   const { theme } = useTheme();
-  const { currentTrack, isPlaying, progress, seekProgress, toggleLike, isLiked } = usePlayer();
+  const { currentTrack, isPlaying, progress, seekProgress, toggleLike, isLiked, playTrack } = usePlayer();
 
-  const liked = isLiked(currentTrack.id);
+  const liked = isLiked(currentTrack?.id);
+
+  if (!currentTrack) {
+    return (
+      <aside
+        className={`
+          spotify-panel relative hidden min-h-0 overflow-hidden 2xl:flex flex-col items-center justify-center p-6 text-center transition-colors duration-200
+          ${
+            theme === "dark"
+              ? "bg-[#121212] text-white border-white/[0.06]"
+              : "bg-[#faf8f5] text-stone-900 border-stone-300/60 shadow-sm"
+          }
+        `}
+      >
+        <BorderBeam
+          size={70}
+          duration={9}
+          colorFrom={theme === "dark" ? "rgba(255,255,255,.03)" : "rgba(239,68,68,.1)"}
+          colorTo={theme === "dark" ? "rgba(239,68,68,.45)" : "rgba(239,68,68,.5)"}
+        />
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-red-500 mb-3.5 shadow-inner">
+          <Music2 size={32} />
+        </div>
+        <h3 className="text-[15px] font-bold tracking-tight">Now Playing</h3>
+        <p className="mt-1.5 text-xs text-stone-500 dark:text-[#a7a7a7] max-w-[200px] leading-relaxed">
+          Select any song or playlist to view live lyrics, artist info, and waveform visualization.
+        </p>
+      </aside>
+    );
+  }
 
   return (
     <aside

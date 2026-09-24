@@ -68,10 +68,8 @@ export function AudioProvider({ children }) {
   // Persistent HTML5 Audio Instance
   const audioRef = useRef(null);
 
-  // Player States
-  const [currentTrack, setCurrentTrack] = useState(() => {
-    return defaultTrack;
-  });
+  // Player States (Initially null until user starts playback)
+  const [currentTrack, setCurrentTrack] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0); // 0 to 100 percentage
@@ -83,14 +81,15 @@ export function AudioProvider({ children }) {
   const [shuffle, setShuffle] = useState(false);
   const [repeatMode, setRepeatMode] = useState("off"); // 'off' | 'all' | 'one'
   const [userQueue, setUserQueue] = useState([]); // User manually added queue
-  const [contextQueue, setContextQueue] = useState(() => [defaultTrack]); // Active playlist/album context queue
+  const [contextQueue, setContextQueue] = useState([]); // Active playlist/album context queue
   const [contextName, setContextName] = useState("Audix Hits");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeLanguage, setActiveLanguage] = useState("All");
   const [audioError, setAudioError] = useState(null);
 
-  // References to keep event listeners fresh without recreation
+  // References to keep event listeners and MediaSession handlers fresh without recreation
   const playNextRef = useRef(null);
+  const playPreviousRef = useRef(null);
   const repeatModeRef = useRef(repeatMode);
   useEffect(() => {
     repeatModeRef.current = repeatMode;
@@ -912,6 +911,15 @@ export function AudioProvider({ children }) {
     const audio = audioRef.current;
     if (!audio) return;
 
+    if (!currentTrack) {
+      // If no track is currently selected, start playing the first trending song
+      const trackToPlay = songs && songs.length > 0 ? songs[0] : null;
+      if (trackToPlay) {
+        playTrack(trackToPlay, songs, "Audix Hits", false);
+      }
+      return;
+    }
+
     if (isPlaying) {
       audio.pause();
       setIsPlaying(false);
@@ -937,7 +945,7 @@ export function AudioProvider({ children }) {
         setIsPlaying(true);
       }
     }
-  }, [isPlaying, currentTrack]);
+  }, [isPlaying, currentTrack, playTrack]);
 
   /**
    * Seek by percentage (0 - 100)
@@ -951,7 +959,7 @@ export function AudioProvider({ children }) {
       const targetTime = (p / 100) * audio.duration;
       audio.currentTime = targetTime;
       setCurrentTime(targetTime);
-    } else if (currentTrack.seconds) {
+    } else if (currentTrack?.seconds) {
       setCurrentTime((p / 100) * currentTrack.seconds);
     }
   }, [currentTrack]);
@@ -1035,25 +1043,24 @@ export function AudioProvider({ children }) {
     // 2. Play next song in active playlist / context queue
     if (contextQueue && contextQueue.length > 0) {
       if (shuffle) {
-        const pool = contextQueue.filter((t) => String(t.id) !== String(currentTrack.id));
+        const pool = currentTrack ? contextQueue.filter((t) => String(t.id) !== String(currentTrack.id)) : contextQueue;
         const finalPool = pool.length > 0 ? pool : contextQueue;
         const randomIndex = Math.floor(Math.random() * finalPool.length);
         playTrack(finalPool[randomIndex], null, null, false);
       } else {
-        const curIdx = contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id));
+        const curIdx = currentTrack ? contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id)) : -1;
         if (curIdx >= 0 && curIdx + 1 < contextQueue.length) {
           playTrack(contextQueue[curIdx + 1], null, null, false);
         } else if (repeatMode === "all" || curIdx === -1) {
           playTrack(contextQueue[0], null, null, false);
         }
       }
+    } else if (songs && songs.length > 0) {
+      const curIdx = currentTrack ? songs.findIndex((t) => String(t.id) === String(currentTrack.id)) : -1;
+      const nextSong = songs[(curIdx + 1) % songs.length];
+      playTrack(nextSong, songs, "Audix Hits", false);
     }
   }, [userQueue, contextQueue, currentTrack, shuffle, repeatMode, playTrack]);
-
-  // Keep playNextRef synced for ended audio listener
-  useEffect(() => {
-    playNextRef.current = playNext;
-  }, [playNext]);
 
   /**
    * Previous Song
@@ -1066,7 +1073,7 @@ export function AudioProvider({ children }) {
     }
 
     if (contextQueue && contextQueue.length > 0) {
-      const curIdx = contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id));
+      const curIdx = currentTrack ? contextQueue.findIndex((t) => String(t.id) === String(currentTrack.id)) : -1;
       if (curIdx > 0) {
         playTrack(contextQueue[curIdx - 1], null, null, false);
       } else if (repeatMode === "all") {
@@ -1074,8 +1081,156 @@ export function AudioProvider({ children }) {
       } else if (contextQueue.length > 0) {
         playTrack(contextQueue[0], null, null, false);
       }
+    } else if (songs && songs.length > 0) {
+      const curIdx = currentTrack ? songs.findIndex((t) => String(t.id) === String(currentTrack.id)) : 0;
+      const prevSong = songs[(curIdx - 1 + songs.length) % songs.length];
+      playTrack(prevSong, songs, "Audix Hits", false);
     }
   }, [contextQueue, currentTrack, repeatMode, playTrack]);
+
+  // Keep playNextRef and playPreviousRef synced for event listeners and MediaSession handlers
+  useEffect(() => {
+    playNextRef.current = playNext;
+    playPreviousRef.current = playPrevious;
+  }, [playNext, playPrevious]);
+
+  /* =========================================================================
+     WEB MEDIA SESSION API (Android/iOS Notification Panel & Lockscreen Controls)
+     - Enables Title, Artist, HD Album Artwork
+     - Enables Previous / Next track buttons (Forward & Backward)
+     - Enables Notification Scrubber Seek
+  ========================================================================= */
+  useEffect(() => {
+    if (typeof window === "undefined" || !("mediaSession" in navigator)) return;
+
+    if (currentTrack) {
+      const artworkList = [];
+      if (currentTrack.image) {
+        artworkList.push(
+          { src: currentTrack.image, sizes: "96x96", type: "image/jpeg" },
+          { src: currentTrack.image, sizes: "128x128", type: "image/jpeg" },
+          { src: currentTrack.image, sizes: "192x192", type: "image/jpeg" },
+          { src: currentTrack.image, sizes: "256x256", type: "image/jpeg" },
+          { src: currentTrack.image, sizes: "512x512", type: "image/jpeg" }
+        );
+      }
+      artworkList.push({ src: "/logo.png", sizes: "512x512", type: "image/png" });
+
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentTrack.title || "Audix Track",
+          artist: currentTrack.artist || "Audix Music",
+          album: currentTrack.album || currentTrack.genre || "Audix Hits",
+          artwork: artworkList,
+        });
+      } catch (e) {
+        console.warn("MediaSession metadata error:", e);
+      }
+    } else {
+      navigator.mediaSession.metadata = null;
+    }
+  }, [currentTrack]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("mediaSession" in navigator)) return;
+
+    navigator.mediaSession.playbackState = isPlaying ? "playing" : "paused";
+
+    const setHandler = (action, handler) => {
+      try {
+        navigator.mediaSession.setActionHandler(action, handler);
+      } catch (e) {
+        // Ignored for browsers that do not support specific optional actions
+      }
+    };
+
+    setHandler("play", () => {
+      if (audioRef.current && currentTrack) {
+        audioRef.current.play().catch(console.warn);
+        setIsPlaying(true);
+      } else if (!currentTrack && songs && songs.length > 0) {
+        playTrack(songs[0], songs, "Audix Hits", false);
+      }
+    });
+
+    setHandler("pause", () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    });
+
+    // PREVIOUS TRACK (Backward button on phone notification panel)
+    setHandler("previoustrack", () => {
+      if (playPreviousRef.current) {
+        playPreviousRef.current();
+      }
+    });
+
+    // NEXT TRACK (Forward button on phone notification panel)
+    setHandler("nexttrack", () => {
+      if (playNextRef.current) {
+        playNextRef.current();
+      }
+    });
+
+    // SEEK BACKWARD 10s
+    setHandler("seekbackward", (details) => {
+      const skipTime = details?.seekOffset || 10;
+      if (audioRef.current) {
+        audioRef.current.currentTime = Math.max(0, audioRef.current.currentTime - skipTime);
+      }
+    });
+
+    // SEEK FORWARD 10s
+    setHandler("seekforward", (details) => {
+      const skipTime = details?.seekOffset || 10;
+      if (audioRef.current && audioRef.current.duration) {
+        audioRef.current.currentTime = Math.min(
+          audioRef.current.duration,
+          audioRef.current.currentTime + skipTime
+        );
+      }
+    });
+
+    // SEEK TO POSITION
+    setHandler("seekto", (details) => {
+      if (audioRef.current && details?.seekTime !== null && details?.seekTime !== undefined) {
+        audioRef.current.currentTime = details.seekTime;
+      }
+    });
+
+    // STOP
+    setHandler("stop", () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        setIsPlaying(false);
+      }
+    });
+  }, [currentTrack, isPlaying, playTrack]);
+
+  // Sync notification lockscreen progress scrubber
+  useEffect(() => {
+    if (
+      typeof window === "undefined" ||
+      !("mediaSession" in navigator) ||
+      !("setPositionState" in navigator.mediaSession)
+    )
+      return;
+
+    if (audioRef.current && duration > 0 && currentTime >= 0) {
+      try {
+        navigator.mediaSession.setPositionState({
+          duration: Math.max(0, duration),
+          playbackRate: audioRef.current.playbackRate || 1.0,
+          position: Math.min(Math.max(0, currentTime), duration),
+        });
+      } catch (e) {
+        // Minor sync mismatch ignored
+      }
+    }
+  }, [currentTime, duration]);
 
   /**
    * Like / Favorite toggling - Supports passing track object, string ID, or currentTrack

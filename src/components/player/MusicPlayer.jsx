@@ -9,6 +9,7 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
+  Music,
   Pause,
   Play,
   Plus,
@@ -136,30 +137,182 @@ export default function MusicPlayer() {
 
   if (isCreatePlaylistOpen) return null;
 
-  const liked = isLiked(currentTrack.id);
+  const liked = currentTrack ? isLiked(currentTrack.id) : false;
 
   return (
     <>
       {/* ========================================================================= */}
       {/* 1. BOTTOM PLAYER BAR (Mobile Mini-Player + Desktop Permanent Bottom Bar)  */}
       {/* ========================================================================= */}
-      <footer
-        onClick={() => {
-          // Open dedicated mobile player when clicking on mobile
-          if (window.innerWidth < 1024) {
-            setShowMobilePlayer(true);
-          }
-        }}
-        className={`
-          fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer overflow-hidden
-          lg:fixed lg:bottom-0 lg:left-0 lg:right-0 lg:z-50 lg:h-[88px] lg:cursor-default lg:overflow-visible lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t lg:px-6
-          ${
-            theme === "dark"
-              ? "bg-[#181818]/80 border-white/10 text-white lg:bg-[#121212]/95 lg:border-white/10"
-              : "bg-[#faf8f5]/80 border-stone-300/70 text-stone-800 lg:bg-[#faf8f5]/95 lg:border-stone-300/80"
-          }
-        `}
-      >
+      {!currentTrack ? (
+        <footer
+          className={`
+            hidden lg:flex fixed bottom-0 left-0 right-0 z-50 h-[88px] items-center justify-between border-t px-6 backdrop-blur-2xl transition-all duration-200 select-none
+            ${
+              theme === "dark"
+                ? "bg-[#121212]/95 border-white/10 text-white"
+                : "bg-[#faf8f5]/95 border-stone-300/80 text-stone-800"
+            }
+          `}
+        >
+          {/* LEFT: Placeholder Info */}
+          <div className="flex items-center gap-3 w-[220px] xl:w-[270px] 2xl:w-[320px] shrink-0">
+            <div
+              className={`
+                h-12 w-12 rounded-xl flex items-center justify-center shrink-0 shadow-inner
+                ${
+                  theme === "dark"
+                    ? "bg-white/5 border border-white/10 text-red-500"
+                    : "bg-red-50 border border-red-200/60 text-red-500"
+                }
+              `}
+            >
+              <Music size={22} className="animate-pulse" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[13.5px] font-bold truncate">Ready to Play</p>
+              <p
+                className={`
+                  text-[11.5px] truncate
+                  ${theme === "dark" ? "text-[#888]" : "text-stone-500"}
+                `}
+              >
+                Select a track or pick below
+              </p>
+            </div>
+          </div>
+
+          {/* CENTER: Quick Play actions & Inactive timeline preview */}
+          <div className="flex flex-col items-center gap-1.5 max-w-[560px] xl:max-w-[700px] mx-auto flex-1 px-4">
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (songs && songs.length > 0) {
+                    playTrack(songs[0], songs, "Audix Trending");
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white text-xs font-bold shadow-md shadow-red-500/20 cursor-pointer transition"
+              >
+                <Play size={13} fill="currentColor" />
+                <span>Play Trending</span>
+              </motion.button>
+
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  if (songs && songs.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * songs.length);
+                    setShuffle(true);
+                    playTrack(songs[randomIndex], songs, "Shuffle Hits");
+                  }
+                }}
+                className={`
+                  flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition cursor-pointer
+                  ${
+                    theme === "dark"
+                      ? "border-white/15 bg-white/5 hover:bg-white/10 text-white"
+                      : "border-stone-300 bg-stone-100 hover:bg-stone-200 text-stone-800"
+                  }
+                `}
+              >
+                <Shuffle size={13} />
+                <span>Shuffle Hits</span>
+              </motion.button>
+            </div>
+
+            <div className="flex w-full items-center gap-3 opacity-40">
+              <span className="text-[11px] tabular-nums font-medium">0:00</span>
+              <div
+                className={`flex-1 h-1 rounded-full ${
+                  theme === "dark" ? "bg-white/10" : "bg-stone-300"
+                }`}
+              />
+              <span className="text-[11px] tabular-nums font-medium">0:00</span>
+            </div>
+          </div>
+
+          {/* RIGHT: Volume Slider & Queue Shortcut */}
+          <div className="hidden lg:w-[190px] xl:w-[230px] 2xl:w-[260px] lg:flex-none items-center justify-end gap-2 xl:gap-3 lg:flex">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              onClick={() => setShowQueueModal((v) => !v)}
+              className={`
+                transition p-1.5 rounded-full cursor-pointer
+                ${
+                  showQueueModal
+                    ? "text-red-500 bg-red-500/10"
+                    : theme === "dark"
+                    ? "text-[#a7a7a7] hover:text-white hover:bg-white/5"
+                    : "text-stone-700 hover:text-stone-950 hover:bg-stone-200/60"
+                }
+              `}
+              title="Current Queue"
+            >
+              <ListMusic size={17} />
+            </motion.button>
+
+            <div className="flex items-center gap-1.5 xl:gap-2">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={toggleMute}
+                className={`
+                  transition cursor-pointer p-1
+                  ${
+                    isMuted || volume === 0
+                      ? "text-red-400"
+                      : theme === "dark"
+                      ? "text-[#a7a7a7] hover:text-white"
+                      : "text-stone-700 hover:text-stone-950"
+                  }
+                `}
+                title={isMuted ? "Unmute" : "Mute"}
+              >
+                {isMuted || volume === 0 ? (
+                  <VolumeX size={17} />
+                ) : volume < 50 ? (
+                  <Volume1 size={17} />
+                ) : (
+                  <Volume2 size={17} />
+                )}
+              </motion.button>
+
+              <input
+                aria-label="Volume slider"
+                type="range"
+                min="0"
+                max="100"
+                value={isMuted ? 0 : volume}
+                onChange={(e) => handleVolumeChange(e.target.value)}
+                className="spotify-range w-[60px] xl:w-[84px]"
+                style={{
+                  "--progress": `${isMuted ? 0 : volume}%`,
+                }}
+              />
+            </div>
+          </div>
+        </footer>
+      ) : (
+        <footer
+          onClick={() => {
+            // Open dedicated mobile player when clicking on mobile
+            if (window.innerWidth < 1024) {
+              setShowMobilePlayer(true);
+            }
+          }}
+          className={`
+            fixed bottom-[68px] left-2 right-2 z-50 flex h-[62px] items-center rounded-2xl border px-3 shadow-2xl backdrop-blur-2xl transition-all duration-200 cursor-pointer overflow-hidden
+            lg:fixed lg:bottom-0 lg:left-0 lg:right-0 lg:z-50 lg:h-[88px] lg:cursor-default lg:overflow-visible lg:rounded-none lg:border-x-0 lg:border-b-0 lg:border-t lg:px-6
+            ${
+              theme === "dark"
+                ? "bg-[#181818]/80 border-white/10 text-white lg:bg-[#121212]/95 lg:border-white/10"
+                : "bg-[#faf8f5]/80 border-stone-300/70 text-stone-800 lg:bg-[#faf8f5]/95 lg:border-stone-300/80"
+            }
+          `}
+        >
         {/* Mobile Full-Card Low-Opacity Progress Fill Background */}
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-2xl lg:hidden">
           <div
@@ -669,12 +822,13 @@ export default function MusicPlayer() {
           </motion.button>
         </div>
       </footer>
+      )}
 
       {/* ========================================================================= */}
       {/* 2. DEDICATED FULLSCREEN MOBILE MUSIC PLAYER (Spotify Style Slide-Up)      */}
       {/* ========================================================================= */}
       <AnimatePresence>
-        {showMobilePlayer && (
+        {showMobilePlayer && currentTrack && (
           <motion.div
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
@@ -977,7 +1131,7 @@ export default function MusicPlayer() {
       {/* ========================================================================= */}
       {/* 3. DESKTOP FULLSCREEN PLAYER MODAL (Responsive & Full Control Visibility) */}
       {/* ========================================================================= */}
-      {showFullscreenModal && (
+      {showFullscreenModal && currentTrack && (
         <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
@@ -1301,40 +1455,42 @@ export default function MusicPlayer() {
             {/* Scrollable Queue Content */}
             <div className="spotify-scrollbar flex-1 overflow-y-auto p-3 space-y-3.5 max-h-[380px]">
               {/* NOW PLAYING SECTION */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-wider text-red-500 mb-1.5 flex items-center gap-1.5">
-                  <span className={`h-1.5 w-1.5 rounded-full bg-red-500 ${isPlaying ? "animate-pulse" : ""}`} />
-                  Now Playing
-                </p>
-                <div
-                  className={`
-                    flex items-center justify-between p-2.5 rounded-xl border
-                    ${
-                      theme === "dark"
-                        ? "bg-red-500/10 border-red-500/20 text-white"
-                        : "bg-red-50 border-red-200 text-stone-900"
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
-                    <img
-                      src={currentTrack.image}
-                      alt={currentTrack.title}
-                      className="h-10 w-10 rounded-lg object-cover shadow-sm shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-red-500">{currentTrack.title}</p>
-                      <p className="truncate text-[10.5px] opacity-70">{currentTrack.artist}</p>
+              {currentTrack && (
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-red-500 mb-1.5 flex items-center gap-1.5">
+                    <span className={`h-1.5 w-1.5 rounded-full bg-red-500 ${isPlaying ? "animate-pulse" : ""}`} />
+                    Now Playing
+                  </p>
+                  <div
+                    className={`
+                      flex items-center justify-between p-2.5 rounded-xl border
+                      ${
+                        theme === "dark"
+                          ? "bg-red-500/10 border-red-500/20 text-white"
+                          : "bg-red-50 border-red-200 text-stone-900"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                      <img
+                        src={currentTrack.image}
+                        alt={currentTrack.title}
+                        className="h-10 w-10 rounded-lg object-cover shadow-sm shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-bold text-red-500">{currentTrack.title}</p>
+                        <p className="truncate text-[10.5px] opacity-70">{currentTrack.artist}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10.5px] font-bold text-red-500 tabular-nums">
+                        {formatSeconds(currentTime)} / {currentTrack.duration}
+                      </span>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[10.5px] font-bold text-red-500 tabular-nums">
-                      {formatSeconds(currentTime)} / {currentTrack.duration}
-                    </span>
-                  </div>
                 </div>
-              </div>
+              )}
 
               {/* USER QUEUED SONGS (NEXT IN QUEUE) */}
               {userQueue.length > 0 ? (
@@ -1418,7 +1574,7 @@ export default function MusicPlayer() {
       {/* 5. SONG INFORMATION & CREDITS MODAL                                      */}
       {/* ========================================================================= */}
       <AnimatePresence>
-        {showSongInfoModal && (
+        {showSongInfoModal && currentTrack && (
           <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4">
             {/* Backdrop */}
             <motion.div
@@ -1699,7 +1855,7 @@ export default function MusicPlayer() {
       {/* 6. DEDICATED ADD TO PLAYLIST MODAL (All Screens)                          */}
       {/* ========================================================================= */}
       <AnimatePresence>
-        {showPlaylistModal && (
+        {showPlaylistModal && currentTrack && (
           <div className="fixed inset-0 z-[100000] flex items-center justify-center p-3 sm:p-4">
             <motion.div
               initial={{ opacity: 0 }}
