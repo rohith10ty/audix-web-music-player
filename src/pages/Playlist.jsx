@@ -7,6 +7,7 @@ import TrackRow, { TrackHeader } from "@/components/music/TrackRow";
 import { usePlayer } from "@/context/PlayerContext";
 import { useTheme } from "@/context/ThemeContext";
 import { playlists, songs } from "@/data/musicData";
+import { getHydratedPlaylists } from "@/data/curatedPlaylists";
 import Footer from "@/components/common/Footer";
 
 const ADD_LANGUAGES = ["All", "Telugu", "Tamil", "Hindi", "English", "Malayalam", "Kannada", "Punjabi"];
@@ -28,10 +29,19 @@ export default function Playlist() {
   const [searchAddQuery, setSearchAddQuery] = useState("");
 
   const playlist = useMemo(() => {
-    const found = allPlaylists.find((item) => String(item.id) === String(id));
+    const cleanId = String(id || "").toLowerCase();
+
+    // 1. User custom playlists
+    const found = allPlaylists.find((item) => String(item.id).toLowerCase() === cleanId);
     if (found) return found;
 
-    const staticFound = playlists.find((item) => String(item.id) === String(id));
+    // 2. Curated playlists catalog
+    const curated = getHydratedPlaylists();
+    const curatedFound = curated.find((item) => String(item.id).toLowerCase() === cleanId);
+    if (curatedFound) return curatedFound;
+
+    // 3. Static playlists
+    const staticFound = playlists.find((item) => String(item.id).toLowerCase() === cleanId);
     if (staticFound) return staticFound;
 
     if (id && String(id).startsWith("custom-")) {
@@ -48,6 +58,13 @@ export default function Playlist() {
       };
     }
 
+    // Detect language from ID
+    const knownLangs = ["English", "Telugu", "Tamil", "Hindi", "Malayalam", "Kannada", "Punjabi"];
+    const matchedLang = knownLangs.find((l) => cleanId.includes(l.toLowerCase()));
+    const matchingTracks = matchedLang
+      ? songs.filter((s) => s.language.toLowerCase() === matchedLang.toLowerCase())
+      : songs.slice(0, 8);
+
     const cleanTitle = id
       ? id
           .replace(/^live-/, "")
@@ -58,12 +75,14 @@ export default function Playlist() {
     return {
       id: id || "playlist-mix",
       title: `${cleanTitle} Mix`,
-      description: "Curated playlist mix with top tracks.",
+      description: `Curated playlist mix with top tracks ${matchedLang ? `in ${matchedLang}` : ""}.`,
       owner: "Audix Live",
       followers: "Curated for you",
       image:
-        songs[0]?.image || "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
-      tracks: songs.slice(0, 8),
+        matchingTracks[0]?.image ||
+        songs[0]?.image ||
+        "https://c.saavncdn.com/517/Ala-Vaikunthapurramuloo-Telugu-2019-20200116144338-500x500.jpg",
+      tracks: matchingTracks.length > 0 ? matchingTracks : songs.slice(0, 8),
       isCustom: false,
     };
   }, [allPlaylists, id]);

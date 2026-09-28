@@ -48,6 +48,48 @@ export function useLiveHome(language = "All") {
 }
 
 /**
+ * Helper to map language / mood keywords to high-quality Saavn search queries
+ */
+function getSmartSearchQuery(query, language = "All") {
+  const q = (query || "").toLowerCase().trim();
+
+  // Language keywords mapping
+  const languageQueryMap = {
+    english: "Global English Top Hits 2025 Billboard",
+    telugu: "Telugu Top Chartbusters 2025 Tollywood",
+    tamil: "Tamil Superhits 2025 Anirudh",
+    hindi: "Bollywood Top Trending Hits 2025 Arijit",
+    malayalam: "Mollywood Top Blockbusters 2025",
+    kannada: "Sandalwood Top Chartbusters 2025",
+    punjabi: "Punjabi Top Hits 2025 Chartbusters",
+  };
+
+  if (languageQueryMap[q]) {
+    return languageQueryMap[q];
+  }
+
+  // Mood / Genre keywords mapping
+  const moodMap = {
+    romantic: `${language !== "All" ? language : "Bollywood"} romantic love melodies`,
+    love: `${language !== "All" ? language : "Bollywood"} romantic love songs`,
+    sad: `${language !== "All" ? language : "Bollywood"} sad heartbreak songs`,
+    heartbreak: `${language !== "All" ? language : "Bollywood"} emotional sad songs`,
+    workout: `${language !== "All" ? language : "English"} workout gym motivation energy`,
+    gym: `${language !== "All" ? language : "English"} gym workout beast mode`,
+    party: `${language !== "All" ? language : "Bollywood"} dance party club hits`,
+    dance: `${language !== "All" ? language : "Bollywood"} dance party hits`,
+    trending: `${language !== "All" ? language : "Indian"} top trending chartbusters`,
+    popular: `${language !== "All" ? language : "Indian"} superhits top songs`,
+  };
+
+  if (moodMap[q]) {
+    return moodMap[q];
+  }
+
+  return language !== "All" ? `${query} ${language}` : query;
+}
+
+/**
  * Custom Hook: useLiveSearch
  * Debounced real-time JioSaavn API song searching
  */
@@ -65,10 +107,9 @@ export function useLiveSearch(query, language = "All", delay = 350) {
     setIsSearching(true);
     const handler = setTimeout(async () => {
       try {
-        const searchQuery =
-          language !== "All" ? `${query} ${language}` : query;
+        const searchQuery = getSmartSearchQuery(query, language);
         const songs = await searchSongs(searchQuery, 1, 25);
-        setResults(songs);
+        setResults(songs || []);
       } catch (err) {
         console.warn("useLiveSearch error:", err);
       } finally {
