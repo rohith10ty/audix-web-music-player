@@ -280,6 +280,7 @@ export function AudioProvider({ children }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("login"); // 'login' | 'signup'
   const [isCreatePlaylistOpen, setIsCreatePlaylistOpen] = useState(false);
+  const [pendingPlaylistTrack, setPendingPlaylistTrack] = useState(null);
 
   const openAuthModal = useCallback((mode = "login") => {
     setAuthModalMode(mode);
@@ -290,16 +291,18 @@ export function AudioProvider({ children }) {
     setIsAuthModalOpen(false);
   }, []);
 
-  const openCreatePlaylistModal = useCallback(() => {
+  const openCreatePlaylistModal = useCallback((trackToAdd = null) => {
     if (!auth.currentUser) {
       openAuthModal("signup");
       return;
     }
+    setPendingPlaylistTrack(trackToAdd || null);
     setIsCreatePlaylistOpen(true);
   }, [openAuthModal]);
 
   const closeCreatePlaylistModal = useCallback(() => {
     setIsCreatePlaylistOpen(false);
+    setPendingPlaylistTrack(null);
   }, []);
 
   // Sync state to Firestore in cloud & local storage
@@ -1323,12 +1326,19 @@ export function AudioProvider({ children }) {
    * Playlist Creation & Management
    */
   const createCustomPlaylist = useCallback(
-    ({ title, description, image }) => {
+    ({ title, description, image, initialTrack = null, initialTracks = [] }) => {
       // Gate for unauthenticated guests
       if (!auth.currentUser) {
         openAuthModal("signup");
         return null;
       }
+
+      const songToAdd = initialTrack || pendingPlaylistTrack;
+      const initialList = songToAdd
+        ? [songToAdd]
+        : Array.isArray(initialTracks) && initialTracks.length > 0
+        ? initialTracks
+        : [];
 
       const newPlaylist = {
         id: `custom-${Date.now()}`,
@@ -1338,8 +1348,9 @@ export function AudioProvider({ children }) {
         followers: "0 saves",
         image:
           image ||
+          initialList[0]?.image ||
           "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=700&q=85",
-        tracks: [], // Start strictly empty with 0 songs
+        tracks: initialList,
         isCustom: true,
         createdAt: new Date().toISOString(),
       };
@@ -1350,9 +1361,12 @@ export function AudioProvider({ children }) {
         return updated;
       });
 
+      // Clear pending track after creating
+      setPendingPlaylistTrack(null);
+
       return newPlaylist;
     },
-    [userProfile, openAuthModal, syncPlaylistsToFirestore],
+    [userProfile, openAuthModal, syncPlaylistsToFirestore, pendingPlaylistTrack],
   );
 
   const addSongToPlaylist = useCallback(
@@ -1494,6 +1508,8 @@ export function AudioProvider({ children }) {
       isCreatePlaylistOpen,
       openCreatePlaylistModal,
       closeCreatePlaylistModal,
+      pendingPlaylistTrack,
+      setPendingPlaylistTrack,
       loginWithEmail,
       signUpWithEmail,
       loginWithGoogle,
@@ -1573,6 +1589,7 @@ export function AudioProvider({ children }) {
       isCreatePlaylistOpen,
       openCreatePlaylistModal,
       closeCreatePlaylistModal,
+      pendingPlaylistTrack,
       loginWithEmail,
       signUpWithEmail,
       loginWithGoogle,

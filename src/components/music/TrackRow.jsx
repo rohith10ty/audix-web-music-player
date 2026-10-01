@@ -399,7 +399,7 @@ export default function TrackRow({
                   <button
                     onClick={() => {
                       setShowOptions(false);
-                      openCreatePlaylistModal();
+                      openCreatePlaylistModal(track);
                     }}
                     className="flex w-full items-center gap-1.5 rounded p-1.5 text-[11px] font-bold text-red-400 hover:bg-red-500/15 cursor-pointer mt-1"
                   >

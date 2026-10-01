@@ -2,6 +2,7 @@ import {
   Activity,
   Check,
   ChevronDown,
+  Disc3,
   Heart,
   Info,
   ListMusic,
@@ -27,7 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { usePlayer } from "@/context/PlayerContext";
 import { useTheme } from "@/context/ThemeContext";
 import { ScrollingWaveform } from "@/components/ui/waveform";
@@ -123,6 +124,100 @@ export default function MusicPlayer() {
     },
     [fetchSearchSongs],
   );
+
+  // Dedicated Album / Movie Soundtrack Tracks for Song Information & Credits Modal
+  const [albumTracks, setAlbumTracks] = useState([]);
+  const [isLoadingAlbumTracks, setIsLoadingAlbumTracks] = useState(false);
+
+  useEffect(() => {
+    if (!showSongInfoModal || !currentTrack) {
+      setAlbumTracks([]);
+      return;
+    }
+
+    let isMounted = true;
+    const rawAlbum = currentTrack.album || "";
+    const isSingle = !rawAlbum || rawAlbum === "Single" || rawAlbum === "Original Sound Recording";
+
+    // Extract clean album or movie name
+    const albumName = !isSingle
+      ? rawAlbum
+          .replace(/\s*-\s*(Telugu|Tamil|Hindi|Kannada|Malayalam|Original Motion Picture Soundtrack|Soundtrack)\s*/gi, "")
+          .trim()
+      : currentTrack.title
+          .replace(/\s*\(From\s*"[^"]+"\)/gi, "")
+          .replace(/\s*-\s*From\s*"[^"]+"/gi, "")
+          .trim();
+
+    // 1. Search local songs matching this album or movie
+    const localAlbumMatches = (songs || []).filter((s) => {
+      if (!s.album && !s.title) return false;
+      const sAlbumClean = (s.album || "").toLowerCase();
+      const sTitleClean = (s.title || "").toLowerCase();
+      const targetClean = rawAlbum.toLowerCase();
+      const searchClean = albumName.toLowerCase();
+
+      return (
+        (targetClean && sAlbumClean.includes(targetClean)) ||
+        (searchClean && sAlbumClean.includes(searchClean)) ||
+        (searchClean && sTitleClean.includes(searchClean))
+      );
+    });
+
+    let initialList = localAlbumMatches;
+    if (!initialList.some((s) => String(s.id) === String(currentTrack.id))) {
+      initialList = [currentTrack, ...initialList];
+    }
+    setAlbumTracks(initialList);
+
+    // 2. Fetch full soundtrack / movie album tracks from JioSaavn API
+    async function fetchAlbumSongs() {
+      if (!albumName || albumName.length < 2 || typeof fetchSearchSongs !== "function") return;
+      try {
+        setIsLoadingAlbumTracks(true);
+        const searchQuery = `${albumName} ${currentTrack.language || ""}`.trim();
+        const results = await fetchSearchSongs(searchQuery, 1, 15);
+        if (isMounted && Array.isArray(results) && results.length > 0) {
+          const targetLower = albumName.toLowerCase();
+          const matchedApiTracks = results.filter((r) => {
+            const rAlbum = (r.album || "").toLowerCase();
+            const rTitle = (r.title || "").toLowerCase();
+            return (
+              rAlbum.includes(targetLower) ||
+              targetLower.includes(rAlbum) ||
+              rTitle.includes(targetLower)
+            );
+          });
+
+          const combined = [
+            currentTrack,
+            ...initialList.filter((s) => String(s.id) !== String(currentTrack.id)),
+            ...matchedApiTracks.filter(
+              (r) =>
+                String(r.id) !== String(currentTrack.id) &&
+                !initialList.some(
+                  (s) =>
+                    String(s.id) === String(r.id) ||
+                    s.title.toLowerCase().trim() === r.title.toLowerCase().trim()
+                )
+            ),
+          ];
+
+          setAlbumTracks(combined.length > 0 ? combined : initialList);
+        }
+      } catch (e) {
+        console.warn("Error fetching album tracks:", e);
+      } finally {
+        if (isMounted) setIsLoadingAlbumTracks(false);
+      }
+    }
+
+    fetchAlbumSongs();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [showSongInfoModal, currentTrack, fetchSearchSongs]);
 
   const upcomingFromContext = useMemo(() => {
     if (!contextQueue || contextQueue.length === 0) return [];
@@ -1780,6 +1875,118 @@ export default function MusicPlayer() {
                   </div>
                 </div>
 
+                {/* Dedicated Album & Movie Soundtrack Section */}
+                {albumTracks && albumTracks.length > 0 && (
+                  <div
+                    className={`
+                      p-3.5 rounded-xl border space-y-3
+                      ${
+                        theme === "dark"
+                          ? "bg-white/[0.02] border-white/[0.08]"
+                          : "bg-stone-100/60 border-stone-200"
+                      }
+                    `}
+                  >
+                    {/* Album Header */}
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500/15 text-red-500 shrink-0">
+                          <Disc3 size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[10px] font-bold uppercase tracking-wider text-red-400">
+                              Album & Movie Soundtrack
+                            </p>
+                            {isLoadingAlbumTracks && (
+                              <Loader2 size={11} className="animate-spin text-red-400" />
+                            )}
+                          </div>
+                          <h5 className="text-xs sm:text-sm font-bold truncate">
+                            {currentTrack.album || currentTrack.title}
+                          </h5>
+                          <p className="text-[11px] opacity-60 truncate">
+                            {albumTracks.length} {albumTracks.length === 1 ? "track" : "tracks"} • {currentTrack.year || "2024"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          playTrack(albumTracks[0], albumTracks, `Album: ${currentTrack.album || currentTrack.title}`);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-bold transition shadow-sm cursor-pointer shrink-0"
+                        title="Play Full Album"
+                      >
+                        <Play size={13} fill="currentColor" />
+                        <span className="hidden sm:inline">Play Album</span>
+                      </button>
+                    </div>
+
+                    {/* Tracklist */}
+                    <div className="space-y-1 max-h-56 overflow-y-auto spotify-scrollbar pr-1">
+                      {albumTracks.map((track, idx) => {
+                        const isCurrentActive = String(track.id) === String(currentTrack.id);
+                        return (
+                          <div
+                            key={track.id || idx}
+                            onClick={() => {
+                              playTrack(track, albumTracks, `Album: ${currentTrack.album || currentTrack.title}`);
+                            }}
+                            className={`
+                              flex items-center gap-3 p-2 rounded-lg text-xs transition cursor-pointer group
+                              ${
+                                isCurrentActive
+                                  ? theme === "dark"
+                                    ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                                    : "bg-red-50 text-red-600 border border-red-200"
+                                  : theme === "dark"
+                                  ? "hover:bg-white/5 text-stone-200"
+                                  : "hover:bg-stone-200/60 text-stone-800"
+                              }
+                            `}
+                          >
+                            {/* Track Number / Playing indicator */}
+                            <div className="w-5 text-center font-bold text-[11px] shrink-0 opacity-70">
+                              {isCurrentActive && isPlaying ? (
+                                <div className="flex items-end justify-center gap-0.5 h-3">
+                                  <span className="w-0.5 h-full bg-red-500 animate-pulse" />
+                                  <span className="w-0.5 h-2 bg-red-500 animate-pulse delay-75" />
+                                  <span className="w-0.5 h-3.5 bg-red-500 animate-pulse delay-150" />
+                                </div>
+                              ) : (
+                                <span>{idx + 1}</span>
+                              )}
+                            </div>
+
+                            {/* Track Thumbnail */}
+                            <img
+                              src={track.image || currentTrack.image}
+                              alt={track.title}
+                              className="h-8 w-8 rounded object-cover shrink-0 border border-white/10"
+                            />
+
+                            {/* Track Title & Artist */}
+                            <div className="min-w-0 flex-1">
+                              <p className={`font-bold truncate ${isCurrentActive ? "text-red-500 dark:text-red-400" : ""}`}>
+                                {track.title}
+                              </p>
+                              <p className="text-[10.5px] opacity-65 truncate">
+                                {track.singers || track.artist}
+                              </p>
+                            </div>
+
+                            {/* Duration */}
+                            <div className="text-[11px] opacity-60 font-mono shrink-0">
+                              {track.duration || "3:30"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* Technical Stream Specifications */}
                 <div
                   className={`
@@ -1927,7 +2134,7 @@ export default function MusicPlayer() {
                     if (!isAuthenticated) {
                       openAuthModal("signup");
                     } else {
-                      openCreatePlaylistModal();
+                      openCreatePlaylistModal(currentTrack);
                     }
                   }}
                   className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-500 hover:bg-red-600 text-white py-2.5 px-4 text-xs font-bold shadow-md transition cursor-pointer"
